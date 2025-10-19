@@ -13,6 +13,34 @@
         .print-hide {
             display: block;
         }
+
+        /* 新增：修復並美化電腦版下拉選單樣式 */
+        #scheduleTable select {
+            width: 100%;
+            padding: 0.5rem; /* 8px */
+            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid #D1D5DB; /* border-gray-300 */
+            text-align: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            -webkit-appearance: menulist-button; /* 讓它在 Webkit 瀏覽器中看起來像按鈕 */
+            -moz-appearance: none;
+            appearance: none;
+            background-color: white; /* 確保有背景色 */
+        }
+
+        #scheduleTable select:focus {
+            outline: none;
+            border-color: #3B82F6; /* blue-500 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+        
+        #scheduleTable td {
+            height: auto; /* 讓高度自動適應 */
+            min-height: 60px; /* 設置最小高度 */
+            vertical-align: middle;
+        }
         
         /* 列印樣式 */
         @media print {
@@ -102,7 +130,7 @@
                         <input type="text" id="saveNameInput" placeholder="輸入存檔名稱..." class="w-full sm:w-auto flex-grow p-2 border border-gray-300 rounded-lg">
                         <div class="flex w-full sm:w-auto gap-2">
                             <button id="saveScheduleBtn" class="w-1/2 sm:w-auto bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600">儲存</button>
-                            <button id="deleteScheduleBtn" class="w-1/2 sm:w-auto bg-red-500 text白 px-3 py-2 rounded-lg hover:bg-red-600">刪除</button>
+                            <button id="deleteScheduleBtn" class="w-1/2 sm:w-auto bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600">刪除</button>
                         </div>
                     </div>
 
@@ -157,7 +185,7 @@
     </div>
 
     <!-- 自訂確認視窗 -->
-    <div id="customConfirm" class="固定 inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div id="customConfirm" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-sm mx-auto">
             <h3 id="confirmTitle" class="text-xl font-bold mb-4">確認操作</h3>
             <p id="confirmMessage" class="text-gray-600 mb-6"></p>
@@ -273,7 +301,8 @@
                     let rowHTML = `<td class="p-2 font-medium border border-gray-300 sticky left-0 bg-white md:bg-gray-50 z-10">${role}</td>`;
                     days.forEach(day => {
                         const selectedValue = currentSchedule[`${role}-${day}`] || '';
-                        rowHTML += `<td class="p-2 border border-gray-300"><select data-role="${role}" data-day="${day}" class="w-full bg-transparent p-1 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">${optionsHTML.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}</select></td>`;
+                        // 更新：移除下拉選單的 class，讓 <style> 中的樣式生效
+                        rowHTML += `<td class="p-2 border border-gray-300"><select data-role="${role}" data-day="${day}">${optionsHTML.replace(\`value="${selectedValue}"\`, \`value="${selectedValue}" selected\`)}</select></td>`;
                     });
                     row.innerHTML = rowHTML;
                     scheduleBody.appendChild(row);
@@ -293,7 +322,7 @@
                             <div>
                                 <label class="block text-gray-500 text-xs font-medium">${role}</label>
                                 <select data-role="${role}" data-day="${day}" class="w-full bg-white p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                                    ${optionsHTML.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}
+                                    ${optionsHTML.replace(\`value="${selectedValue}"\`, \`value="${selectedValue}" selected\`)}
                                 </select>
                             </div>
                         `;
@@ -361,7 +390,7 @@
                 const deleteBtn = e.target.closest('.delete-btn');
                 if (deleteBtn) {
                     const nameToDelete = deleteBtn.dataset.name;
-                    showConfirm(`確定要刪除 "${nameToDelete}" 嗎？此人員的所有排班將被清除。`, () => {
+                    showConfirm(\`確定要刪除 "\${nameToDelete}" 嗎？此人員的所有排班將被清除。\`, () => {
                         appState.names = appState.names.filter(n => n !== nameToDelete);
                         Object.values(appState.schedules).forEach(schedule => {
                             Object.keys(schedule).forEach(key => {
@@ -377,7 +406,7 @@
             scheduleContainer.addEventListener('change', (e) => {
                 if (e.target.tagName === 'SELECT' && e.target.dataset.role) {
                     const { role, day } = e.target.dataset;
-                    appState.schedules[appState.currentScheduleName][`${role}-${day}`] = e.target.value;
+                    appState.schedules[appState.currentScheduleName][\`\${role}-\${day}\`] = e.target.value;
                     saveState();
                     render(); // 重繪整個排班表以同步兩邊視圖
                 }
@@ -388,7 +417,7 @@
                 if (!name) name = saveNameInput.placeholder;
                 
                 if (appState.schedules[name] && name !== appState.currentScheduleName) {
-                    showConfirm(`存檔名稱 "${name}" 已存在，您要覆蓋它嗎？`, () => {
+                    showConfirm(\`存檔名稱 "\${name}" 已存在，您要覆蓋它嗎？\`, () => {
                         appState.schedules[name] = { ...(appState.schedules[appState.currentScheduleName] || {}) };
                         appState.currentScheduleName = name;
                         saveState();
@@ -420,7 +449,7 @@
                 if (Object.keys(appState.schedules).length <= 1) {
                     alert('不能刪除最後一個排班表！'); return;
                 }
-                showConfirm(`確定要刪除排班表 "${nameToDelete}" 嗎？`, () => {
+                showConfirm(\`確定要刪除排班表 "\${nameToDelete}" 嗎？\`, () => {
                     delete appState.schedules[nameToDelete];
                     appState.currentScheduleName = Object.keys(appState.schedules)[0];
                     saveState();
@@ -442,7 +471,7 @@
                 const monthlyCounts = {};
 
                 Object.entries(appState.schedules).forEach(([name, scheduleData]) => {
-                    if (name.includes(year) && name.includes(`${month}月`)) {
+                    if (name.includes(year) && name.includes(\`\${month}月\`)) {
                         Object.values(scheduleData).forEach(person => {
                             if (person) monthlyCounts[person] = (monthlyCounts[person] || 0) + 1;
                         });
@@ -451,13 +480,13 @@
 
                 historicalStatsDashboard.innerHTML = '';
                 if (Object.keys(monthlyCounts).length === 0) {
-                     historicalStatsDashboard.innerHTML = `<p class="text-gray-500 col-span-full">在 ${year} 年 ${month} 月找不到符合的排班資料。</p>`;
+                     historicalStatsDashboard.innerHTML = \`<p class="text-gray-500 col-span-full">在 \${year} 年 \${month} 月找不到符合的排班資料。</p>\`;
                      return;
                 }
                 Object.entries(monthlyCounts).sort(([,a],[,b]) => b-a).forEach(([name, count]) => {
                     const statEl = document.createElement('div');
                     statEl.className = 'bg-gray-100 p-2 rounded-lg text-sm';
-                    statEl.innerHTML = `<span class="font-bold">${name}:</span> <span class="text-teal-600 font-semibold">${count} 次</span>`;
+                    statEl.innerHTML = \`<span class="font-bold">\${name}:</span> <span class="text-teal-600 font-semibold">\${count} 次</span>\`;
                     historicalStatsDashboard.appendChild(statEl);
                 });
             });
@@ -495,7 +524,7 @@
                     monthSelector.appendChild(option);
                 }
 
-                if (monthSelector.querySelector(`option[value="${currentMonthValue}"]`)) {
+                if (monthSelector.querySelector(\`option[value="\${currentMonthValue}"]\`)) {
                     monthSelector.value = currentMonthValue;
                 } else {
                     monthSelector.value = startMonth;
@@ -525,7 +554,7 @@
                 populateMonthSelector(yearSelector.value); 
                 
                 const currentMonth = new Date().getMonth() + 1;
-                if (monthSelector.querySelector(`option[value="${currentMonth}"]`)) {
+                if (monthSelector.querySelector(\`option[value="\${currentMonth}"]\`)) {
                     monthSelector.value = currentMonth;
                 }
                 
