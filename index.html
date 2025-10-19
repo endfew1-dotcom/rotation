@@ -337,6 +337,28 @@
             </div>
         </div>
     </div>
+    
+    <!-- Day Selection Modal -->
+    <div id="daySelectionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">選擇要截圖的日期</h2>
+                <button id="closeDaySelectionModalBtn" class="text-gray-400 hover:text-[var(--color-text-header)]">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <p class="opacity-80 mb-4">請勾選您想要包含在截圖中的星期。</p>
+            <div id="daySelectionCheckboxes" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                <!-- Checkboxes will be inserted here by JS -->
+            </div>
+            <div class="mt-6 text-right">
+                <button id="startScreenshotBtn" class="action-btn btn-add">
+                    <i data-lucide="camera"></i>
+                    <span>開始截圖</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
 
     <script>
@@ -370,6 +392,10 @@
             const viewToggleBtn = document.getElementById('viewToggleBtn');
             const tableView = document.getElementById('tableView');
             const verticalView = document.getElementById('verticalView');
+            const daySelectionModal = document.getElementById('daySelectionModal');
+            const closeDaySelectionModalBtn = document.getElementById('closeDaySelectionModalBtn');
+            const daySelectionCheckboxes = document.getElementById('daySelectionCheckboxes');
+            const startScreenshotBtn = document.getElementById('startScreenshotBtn');
 
             // 應用程式狀態
             let personnel = [
@@ -541,12 +567,18 @@
                 lucide.createIcons();
             });
             
+            // --- Modal 關閉事件 ---
             closeModalBtn.addEventListener('click', () => reminderModal.classList.remove('visible'));
             reminderModal.addEventListener('click', (e) => { if (e.target === reminderModal) reminderModal.classList.remove('visible'); });
             
             closeScreenshotModalBtn.addEventListener('click', () => screenshotModal.classList.remove('visible'));
             screenshotModal.addEventListener('click', (e) => { 
                 if (e.target === screenshotModal) screenshotModal.classList.remove('visible'); 
+            });
+
+            closeDaySelectionModalBtn.addEventListener('click', () => daySelectionModal.classList.remove('visible'));
+            daySelectionModal.addEventListener('click', (e) => { 
+                if (e.target === daySelectionModal) daySelectionModal.classList.remove('visible'); 
             });
             
             copyReminderBtn.addEventListener('click', () => {
@@ -560,34 +592,112 @@
                 }
             });
 
-            screenshotBtn.addEventListener('click', async () => {
-                const captureTarget = document.getElementById('captureArea');
-                const elementsToHide = captureTarget.querySelectorAll('.no-screenshot');
+            // --- 截圖分享主流程 ---
+            screenshotBtn.addEventListener('click', () => {
+                daySelectionCheckboxes.innerHTML = '';
+                days.forEach((day) => {
+                    daySelectionCheckboxes.innerHTML += `
+                        <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-gray-100">
+                            <input type="checkbox" value="${day}" class="h-5 w-5 rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]" checked>
+                            <span class="text-gray-700 font-medium">星期${day}</span>
+                        </label>
+                    `;
+                });
+                daySelectionModal.classList.add('visible');
+            });
+
+            startScreenshotBtn.addEventListener('click', async () => {
+                const selectedDays = Array.from(daySelectionCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+
+                if (selectedDays.length === 0) {
+                    alert("請至少選擇一個要截圖的日期。");
+                    return;
+                }
+
+                daySelectionModal.classList.remove('visible');
+                await performScreenshot(selectedDays);
+            });
             
-                elementsToHide.forEach(el => el.style.visibility = 'hidden');
-                const originalPadding = captureTarget.style.padding;
-                captureTarget.style.padding = '1.5rem';
-            
+            async function performScreenshot(selectedDays) {
+                const originalBtnContent = screenshotBtn.innerHTML;
                 screenshotBtn.disabled = true;
-                screenshotBtn.querySelector('span').textContent = '截圖中...';
-            
+                screenshotBtn.innerHTML = `<i data-lucide="loader-2" class="loading-spinner"></i><span>截圖中...</span>`;
+                lucide.createIcons();
+                
+                const tempCaptureContainer = document.createElement('div');
+                tempCaptureContainer.style.position = 'absolute';
+                tempCaptureContainer.style.left = '-9999px';
+                tempCaptureContainer.style.top = '0';
+                tempCaptureContainer.style.padding = '1.5rem';
+                tempCaptureContainer.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--color-bg');
+                tempCaptureContainer.style.width = document.getElementById('captureArea').offsetWidth + 'px';
+                document.body.appendChild(tempCaptureContainer);
+
+                tempCaptureContainer.innerHTML = `
+                    <header class="text-center mb-8">
+                        <h1 class="text-4xl font-bold">${document.querySelector('h1').textContent}</h1>
+                        <p class="mt-3 text-lg opacity-80">${document.querySelector('header p').textContent}</p>
+                        <div class="w-24 h-px bg-gradient-to-r from-transparent via-[--color-primary] to-transparent mx-auto mt-4"></div>
+                    </header>
+                    <h2 class="text-2xl font-bold text-center mb-4">勤務分配表</h2>
+                `;
+                
+                const contentArea = document.createElement('div');
+
+                if (currentView === 'table') {
+                    const tableContainer = document.createElement('div');
+                    tableContainer.className = 'table-container rounded-lg border border-[var(--color-border)]/80 overflow-hidden';
+                    
+                    const table = document.createElement('table');
+                    table.className = 'min-w-full';
+                    
+                    const thead = document.createElement('thead');
+                    let headerRowHtml = '<tr><th class="w-16">職位</th>';
+                    selectedDays.forEach(day => { headerRowHtml += `<th>星期${day}</th>`; });
+                    headerRowHtml += '</tr>';
+                    thead.innerHTML = headerRowHtml;
+                    table.appendChild(thead);
+
+                    const tbody = document.createElement('tbody');
+                    positions.forEach(position => {
+                        let bodyRowHtml = `<tr><td class="position-header">${escapeHTML(position)}</td>`;
+                        selectedDays.forEach(day => {
+                            const select = document.getElementById(`cell-${position}-${day}`);
+                            const person = select.value || '未安排';
+                            bodyRowHtml += `<td><span style="font-size: 1.125rem;">${escapeHTML(person)}</span></td>`;
+                        });
+                        bodyRowHtml += '</tr>';
+                        tbody.innerHTML += bodyRowHtml;
+                    });
+                    table.appendChild(tbody);
+                    tableContainer.appendChild(table);
+                    contentArea.appendChild(tableContainer);
+
+                } else { 
+                    contentArea.className = 'vertical-view';
+                    selectedDays.forEach(day => {
+                        const dayIndex = days.indexOf(day);
+                        const originalCard = verticalView.children[dayIndex];
+                        if(originalCard) {
+                            contentArea.appendChild(originalCard.cloneNode(true));
+                        }
+                    });
+                }
+
+                tempCaptureContainer.appendChild(contentArea);
+
                 try {
-                    const canvas = await html2canvas(captureTarget, {
+                    const canvas = await html2canvas(tempCaptureContainer, {
                         scale: 2,
                         logging: false,
                         useCORS: true,
-                        backgroundColor: getComputedStyle(document.body).getPropertyValue('--color-bg')
                     });
-            
+
                     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                     const file = new File([blob], '勤務表.png', { type: 'image/png' });
-            
+
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: '一週勤務表',
-                            text: '這是一週勤務分配表。'
-                        });
+                        await navigator.share({ files: [file], title: '一週勤務表', text: '這是一週勤務分配表。' });
                     } else {
                         const imageUrl = URL.createObjectURL(blob);
                         screenshotImage.src = imageUrl;
@@ -600,14 +710,14 @@
                         alert('抱歉，截圖或分享功能發生錯誤。');
                     }
                 } finally {
-                    elementsToHide.forEach(el => el.style.visibility = 'visible');
-                    captureTarget.style.padding = originalPadding;
-            
+                    document.body.removeChild(tempCaptureContainer);
                     screenshotBtn.disabled = false;
-                    screenshotBtn.querySelector('span').textContent = '截圖分享';
+                    screenshotBtn.innerHTML = originalBtnContent;
+                    lucide.createIcons();
                 }
-            });
-
+            }
+            
+            // --- 核心功能 (渲染、儲存、讀取) ---
             function renderPersonnelList() {
                 personnel = [...new Set(personnel)];
                 personnelListDiv.innerHTML = '';
