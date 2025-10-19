@@ -111,6 +111,7 @@
             background-color: #fff;
             color: var(--color-text-body);
             transition: all 0.2s ease-in-out;
+            font-size: 1.125rem; /* 姓名加大 */
         }
         select:focus, input[type="text"]:focus {
             outline: none;
@@ -183,7 +184,30 @@
             background-color: rgba(185, 147, 108, 0.1);
             border: 1px solid rgba(185, 147, 108, 0.2);
             color: var(--color-text-header);
+            font-size: 1rem; /* 增加人員標籤字體大小 */
         }
+        
+        /* 直立式檢視 */
+        .vertical-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .day-card { background-color: rgba(255,255,255,0.5); border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 4px 12px -4px rgba(74, 63, 53, 0.1); }
+        .day-card h3 { font-family: 'Noto Serif TC', serif; font-size: 1.25rem; color: var(--color-primary); border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .day-card div { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--color-border); }
+        .day-card div:last-child { border-bottom: none; }
+        .day-card .position { font-weight: 500; color: var(--color-text-header); font-size: 1rem; } /* 職位字體 */
+        .day-card .person { color: var(--color-text-body); font-size: 1.125rem; font-weight: 500; } /* 姓名加大加粗 */
+
+        /* 檢視切換按鈕 */
+        #viewToggleBtn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 40;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 8px 25px -8px rgba(74, 63, 53, 0.4);
+        }
+
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -199,7 +223,6 @@
         <div class="mb-8 p-6 bg-gray-50/10 rounded-lg border border-[var(--color-border)]/50 no-screenshot">
             <h2 class="text-xl font-semibold mb-4">人員名單管理</h2>
             
-            <!-- 新增人員區塊 (永遠顯示) -->
             <div class="flex flex-col sm:flex-row gap-4 mb-4">
                 <input type="text" id="newName" placeholder="請輸入姓名" class="flex-grow w-full px-4 py-2 rounded-lg focus:outline-none">
                 <button id="addNameBtn" class="action-btn w-full sm:w-auto btn-add">
@@ -208,7 +231,6 @@
                 </button>
             </div>
 
-            <!-- 已輸入人員名單收合區塊 -->
             <div id="togglePersonnelSection" class="flex justify-between items-center cursor-pointer mt-6 border-t border-[var(--color-border)]/50 pt-4">
                 <h3 class="font-semibold text-gray-700">已輸入人員名單 (點此展開/收合)</h3>
                 <button class="text-gray-600 hover:text-[var(--color-text-header)] transition-transform duration-300" id="personnelToggleButton">
@@ -231,8 +253,8 @@
                     <span>✨ AI 智慧排班建議</span>
                 </button>
             </div>
-            <!-- 勤務表 -->
-            <div class="table-container rounded-lg border border-[var(--color-border)]/80 overflow-hidden">
+            
+            <div id="tableView" class="table-container rounded-lg border border-[var(--color-border)]/80 overflow-hidden">
                 <table class="min-w-full">
                     <thead>
                         <tr>
@@ -246,11 +268,12 @@
                             <th>星期日</th>
                         </tr>
                     </thead>
-                    <tbody id="scheduleBody">
-                        <!-- 表格內容 -->
-                    </tbody>
+                    <tbody id="scheduleBody"></tbody>
                 </table>
             </div>
+
+            <div id="verticalView" class="vertical-view hidden"></div>
+
         </div>
         
         <footer class="mt-8 text-center flex flex-wrap justify-center gap-4 no-screenshot">
@@ -268,6 +291,10 @@
             </button>
         </footer>
     </div>
+
+    <button id="viewToggleBtn" title="切換檢視模式" class="action-btn btn-add no-screenshot">
+        <i data-lucide="list"></i>
+    </button>
 
     <!-- AI 提醒訊息 Modal -->
     <div id="reminderModal" class="modal-overlay">
@@ -340,6 +367,9 @@
             const closeScreenshotModalBtn = document.getElementById('closeScreenshotModalBtn');
             const screenshotImage = document.getElementById('screenshotImage');
             const downloadScreenshotBtn = document.getElementById('downloadScreenshotBtn');
+            const viewToggleBtn = document.getElementById('viewToggleBtn');
+            const tableView = document.getElementById('tableView');
+            const verticalView = document.getElementById('verticalView');
 
             // 應用程式狀態
             let personnel = [
@@ -353,6 +383,7 @@
             ];
             const positions = ['司儀', '上執禮', '下執禮', '下禮', '百孝經'];
             const days = ['一', '二', '三', '四', '五', '六', '日'];
+            let currentView = 'table'; // 'table' or 'vertical'
             
             // --- 收合功能 ---
             togglePersonnelSection.addEventListener('click', () => {
@@ -360,6 +391,56 @@
                 personnelToggleButton.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
                 localStorage.setItem('personnelSectionHidden', isHidden);
             });
+
+            // --- 檢視模式切換 ---
+            function setView(view) {
+                if (view === 'vertical') {
+                    tableView.classList.add('hidden');
+                    verticalView.classList.remove('hidden');
+                    viewToggleBtn.innerHTML = `<i data-lucide="layout-grid"></i>`;
+                    currentView = 'vertical';
+                } else {
+                    tableView.classList.remove('hidden');
+                    verticalView.classList.add('hidden');
+                    viewToggleBtn.innerHTML = `<i data-lucide="list"></i>`;
+                    currentView = 'table';
+                }
+                lucide.createIcons();
+                localStorage.setItem('dutyRosterView', view);
+            }
+
+            viewToggleBtn.addEventListener('click', () => {
+                const newView = currentView === 'table' ? 'vertical' : 'table';
+                setView(newView);
+                if (newView === 'vertical') {
+                    renderVerticalView();
+                }
+            });
+            
+            function renderVerticalView() {
+                verticalView.innerHTML = '';
+                days.forEach(day => {
+                    const dayCard = document.createElement('div');
+                    dayCard.className = 'day-card';
+                    
+                    let cardContent = `<h3>星期${day}</h3>`;
+                    
+                    positions.forEach(position => {
+                        const select = document.getElementById(`cell-${position}-${day}`);
+                        const person = select.value || '未安排';
+                        cardContent += `
+                            <div>
+                                <span class="position">${escapeHTML(position)}</span>
+                                <span class="person">${escapeHTML(person)}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    dayCard.innerHTML = cardContent;
+                    verticalView.appendChild(dayCard);
+                });
+            }
+
 
             // --- Gemini API 功能 ---
             async function callGeminiAPI(payload, isJson = false) {
@@ -388,7 +469,6 @@
                 }
             }
 
-            // --- 修改後的功能：隨機排班 ---
             geminiSuggestBtn.addEventListener('click', () => {
                 if (personnel.length === 0) {
                     alert("人員名單是空的，無法進行排班。");
@@ -400,7 +480,6 @@
                 geminiSuggestBtn.innerHTML = `<i data-lucide="shuffle" class="loading-spinner"></i><span>隨機排班中...</span>`;
                 lucide.createIcons();
 
-                // 使用一個短的延遲來確保 UI 更新到載入狀態
                 setTimeout(() => {
                     const selects = document.querySelectorAll('#scheduleBody select');
                     selects.forEach(select => {
@@ -410,6 +489,7 @@
                     });
     
                     saveState();
+                    renderVerticalView();
                     alert("已成功將所有人員隨機排入班表！");
     
                     geminiSuggestBtn.disabled = false;
@@ -485,7 +565,6 @@
                 const elementsToHide = captureTarget.querySelectorAll('.no-screenshot');
             
                 elementsToHide.forEach(el => el.style.visibility = 'hidden');
-                // Temporarily remove padding for screenshot if it affects layout
                 const originalPadding = captureTarget.style.padding;
                 captureTarget.style.padding = '1.5rem';
             
@@ -517,7 +596,7 @@
                     }
                 } catch (error) {
                     console.error('截圖/分享失敗:', error);
-                    if (error.name !== 'AbortError') { // AbortError means user cancelled the share dialog
+                    if (error.name !== 'AbortError') {
                         alert('抱歉，截圖或分享功能發生錯誤。');
                     }
                 } finally {
@@ -535,7 +614,7 @@
                 if (personnel.length === 0) { personnelListDiv.innerHTML = '<p class="opacity-70">目前沒有人員，請新增。</p>'; }
                 personnel.forEach((name, index) => {
                     const personTag = document.createElement('div');
-                    personTag.className = 'flex items-center gap-2 person-tag px-3 py-1.5 rounded-full text-sm font-medium';
+                    personTag.className = 'flex items-center gap-2 person-tag px-3 py-1.5 rounded-full font-medium';
                     personTag.innerHTML = `<span>${escapeHTML(name)}</span><button class="delete-btn" data-index="${index}" title="刪除 ${escapeHTML(name)}">×</button>`;
                     personnelListDiv.appendChild(personTag);
                 });
@@ -579,23 +658,28 @@
                 }
                 
                 const isHidden = localStorage.getItem('personnelSectionHidden') === 'true';
-                if (isHidden) {
-                    personnelManagementContent.classList.add('hidden');
-                    personnelToggleButton.style.transform = 'rotate(180deg)';
-                } else {
-                    personnelManagementContent.classList.remove('hidden');
-                    personnelToggleButton.style.transform = 'rotate(0deg)';
-                }
-                lucide.createIcons();
+                personnelManagementContent.classList.toggle('hidden', isHidden);
+                personnelToggleButton.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+
                 renderSchedule();
                 renderPersonnelList();
                 updateAllDropdowns();
+
                 const savedSchedule = localStorage.getItem('dutyRosterSchedule');
                 if (savedSchedule) {
                     const scheduleData = JSON.parse(savedSchedule);
-                    for (const id in scheduleData) { const select = document.getElementById(id); if (select) { select.value = scheduleData[id]; } }
+                    for (const id in scheduleData) { 
+                        const select = document.getElementById(id); 
+                        if (select) { select.value = scheduleData[id]; } 
+                    }
                 }
+                
+                const savedView = localStorage.getItem('dutyRosterView') || 'table';
+                setView(savedView);
+                renderVerticalView();
+
             }
+
             function escapeHTML(str) { return str.replace(/[&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[match]); }
             addNameBtn.addEventListener('click', () => {
                 const name = newNameInput.value.trim();
@@ -623,11 +707,17 @@
                     }
                 }
             });
-            scheduleBody.addEventListener('change', (e) => { if (e.target.tagName === 'SELECT') saveState(); });
+            scheduleBody.addEventListener('change', (e) => { 
+                if (e.target.tagName === 'SELECT') {
+                    saveState(); 
+                    renderVerticalView();
+                }
+            });
             clearScheduleBtn.addEventListener('click', () => {
                 if (confirm('確定要清空所有已選擇的排班資料嗎？此操作無法復原。')) {
                     document.querySelectorAll('#scheduleBody select').forEach(select => { select.value = ''; });
                     saveState();
+                    renderVerticalView();
                 }
             });
 
