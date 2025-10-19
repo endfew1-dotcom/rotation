@@ -3,631 +3,617 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>執禮人員輪值表</title>
+    <title>一週勤務表 (AI 智慧版)</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- 引入 html2canvas 函式庫來實現截圖功能 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- 引入 Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 引入 Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS 變數定義 */
+        :root {
+            --color-bg: #fdfaf6; /* 溫潤米白背景 */
+            --color-surface: rgba(255, 255, 255, 0.7); /* 半透明表面 */
+            --color-primary: #b9936c; /* 暗金 */
+            --color-primary-dark: #9f7b55;
+            --color-text-header: #4a3f35; /* 沉穩木褐 */
+            --color-text-body: #6d5d4b;
+            --color-border: #e0d5c6; /* 雅致邊框 */
+            --color-accent-danger: #c0392b; /* 朱紅 */
+            --color-accent-success: #27ae60;
+        }
+
+        /* 整體樣式 */
         body {
-            font-family: 'Inter', 'Noto Sans TC', sans-serif;
-            background-color: #f8fafc; /* bg-slate-50 */
-            overflow-x: hidden;
-        }
-        .print-hide {
-            display: block;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--color-bg);
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="none" stroke-width="1" stroke="rgba(185, 147, 108, 0.07)" d="M-2,2 l4,-4 M0,20 l20,-20 M18,22 l4,-4"/></svg>');
+            color: var(--color-text-body);
         }
 
-        /* --- 華麗升級：動畫與效果 --- */
-        @keyframes aurora {
-            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1.5); }
-            50% { transform: translate(-50%, -50%) rotate(180deg) scale(2); }
-            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.5); }
+        #captureArea {
+            background-color: var(--color-surface);
+            backdrop-filter: blur(16px);
+            border: 2px solid transparent;
+            box-shadow: 0 15px 40px -15px rgba(74, 63, 53, 0.25);
+            border-image: linear-gradient(to bottom right, #d4af87, #fdfaf6, #d4af87) 1;
         }
 
-        .aurora-bg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 150vw;
-            height: 150vw;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.1), transparent 40%),
-                        radial-gradient(circle at top left, rgba(13, 148, 136, 0.15), transparent 50%),
-                        radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.1), transparent 45%);
-            animation: aurora 30s linear infinite;
-            filter: blur(60px);
+        /* 標題字體 */
+        h1, h2 {
+            font-family: 'Noto Serif TC', serif;
+            color: var(--color-text-header);
+            letter-spacing: 0.05em;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .table-container {
+            overflow-x: auto;
         }
 
-        .card-hover {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        /* 表格樣式 */
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
         }
-        .card-hover:hover {
-            transform: translateY(-5px);
+        th, td {
+            border: 1px solid var(--color-border);
+            padding: 0.75rem 1rem;
+            text-align: center;
+            white-space: nowrap;
         }
-        .card-hover.border-blue-500:hover { box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2); }
-        .card-hover.border-teal-500:hover { box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.2); }
-        .card-hover.border-indigo-500:hover { box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2); }
-        .card-hover.border-purple-500:hover { box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.2); }
+        th {
+            background-color: rgba(253, 250, 246, 0.8);
+            backdrop-filter: blur(4px);
+            font-weight: 700;
+            color: var(--color-text-header);
+            font-family: 'Noto Serif TC', serif;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--color-primary);
+        }
+        tbody tr {
+             transition: background-color 0.2s;
+        }
+        tbody tr:hover {
+            background-color: rgba(185, 147, 108, 0.08);
+        }
 
-        /* Custom Scrollbar */
-        #nameList::-webkit-scrollbar { width: 6px; }
-        #nameList::-webkit-scrollbar-track { background: #f1f5f9; }
-        #nameList::-webkit-scrollbar-thumb { background: #60a5fa; border-radius: 3px; }
-        #nameList::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+        /* 輸入框 & 下拉選單 */
+        select, input[type="text"] {
+            cursor: pointer;
+            width: 100%;
+            min-width: 130px;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            background-color: #fff;
+            color: var(--color-text-body);
+            transition: all 0.2s ease-in-out;
+        }
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(185, 147, 108, 0.2);
+            background-color: var(--color-bg);
+        }
 
-        /* Collapsible Section Transition */
-        #nameManagementContent {
-            display: grid;
-            grid-template-rows: 0fr;
-            transition: grid-template-rows 0.4s ease-in-out, margin-top 0.4s ease-in-out;
+        /* 刪除按鈕 */
+        .delete-btn {
+            background-color: #fbeee C; color: #a44a3f; width: 1.25rem; height: 1.25rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px; font-size: 0.875rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s, color 0.2s, transform 0.2s;
         }
-        #nameManagementContent > div {
-            overflow: hidden;
-        }
-        #nameManagementContent.is-open {
-            grid-template-rows: 1fr;
-            margin-top: 1rem;
+        .delete-btn:hover {
+            background-color: var(--color-accent-danger); color: white; transform: scale(1.1);
         }
         
-        #scheduleTable td { height: auto; min-height: 60px; vertical-align: middle; }
+        /* 職位標題 */
+        .position-header {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            background-color: rgba(185, 147, 108, 0.05) !important;
+            font-weight: 700;
+            padding: 0.5rem;
+            color: var(--color-text-header);
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        /* 主要操作按鈕 */
+        .action-btn {
+            display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; padding: 0.75rem 1.5rem; border-radius: 9999px; transition: all 0.2s ease-in-out; box-shadow: 0 4px 15px -5px rgba(74, 63, 53, 0.15); border: 1px solid transparent;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 25px -8px rgba(74, 63, 53, 0.25);
+        }
+        .action-btn:active {
+             transform: translateY(0px) scale(1);
+             box-shadow: 0 4px 15px -5px rgba(74, 63, 53, 0.15);
+        }
+        .action-btn:disabled {
+            opacity: 0.7; cursor: not-allowed; transform: translateY(0);
+        }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Modal 樣式 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: var(--color-bg); padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; border: 1px solid var(--color-border); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); transform: scale(0.95); transition: transform 0.3s;
+        }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+
+        /* 收合區塊過渡動畫 */
+        .collapsible-content { max-height: 1000px; overflow: hidden; transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out; }
+        .collapsible-content.hidden { max-height: 0; margin-top: 0 !important; }
         
-        @media print {
-            body * { visibility: hidden; } .print-hide { display: none !important; } .printable-area, .printable-area * { visibility: visible; }
-            .printable-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
-            h1, h2 { text-align: center; }
+        /* 按鈕顏色配置 */
+        .btn-add { background-color: var(--color-primary); color: white; border-color: var(--color-primary-dark); }
+        .btn-add:hover { background-color: var(--color-primary-dark); }
+        .btn-ai-suggest { background-image: linear-gradient(135deg, #a07c52, #d4af87); color: white; }
+        .btn-ai-reminder { background-image: linear-gradient(135deg, #5a7d7c, #88d3ce); color: white; }
+        .btn-screenshot { background-color: #2c8a7c; color: white; }
+        .btn-clear { background-color: var(--color-accent-danger); color: white; }
+        
+        /* 人員標籤 */
+        .person-tag {
+            background-color: rgba(185, 147, 108, 0.1);
+            border: 1px solid rgba(185, 147, 108, 0.2);
+            color: var(--color-text-header);
         }
     </style>
 </head>
-<body class="text-gray-700 antialiased">
-    <!-- 動態極光背景 -->
-    <div class="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden">
-        <div class="aurora-bg"></div>
-    </div>
+<body class="p-4 md:p-8">
 
-    <div class="container mx-auto p-4 md:p-8 max-w-7xl relative z-10">
-        <header class="text-center mb-8 print-hide p-8 rounded-2xl bg-gradient-to-r from-blue-600 to-teal-500 shadow-lg animate-fade-in-up">
-            <h1 class="text-3xl md:text-4xl font-bold text-white">執禮人員輪值表</h1>
-            <p class="text-blue-100 mt-2">集中管理、智慧排班、多版本存取與歷史統計。</p>
+    <div id="captureArea" class="max-w-7xl mx-auto rounded-2xl p-6 md:p-8">
+        <header class="text-center mb-8 no-screenshot">
+            <h1 class="text-4xl font-bold">一週勤務表</h1>
+            <p class="mt-3 text-lg opacity-80">AI 智慧排版・締結善緣</p>
+            <div class="w-24 h-px bg-gradient-to-r from-transparent via-[--color-primary] to-transparent mx-auto mt-4"></div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg h-fit print-hide border-t-4 border-blue-500 card-hover">
-                <div id="toggleNameList" class="flex justify-between items-center pb-3 cursor-pointer">
-                    <h2 class="text-2xl font-bold flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-1a6 6 0 00-5.176-5.97M15 21h6m-6-1a6 6 0 00-5.176-5.97m-3.203-8.666A4.001 4.001 0 019 6a4 4 0 014 4" />
-                        </svg>
-                        人員名單管理
-                    </h2>
-                    <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-transform duration-300 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </div>
-                
-                <div id="nameManagementContent">
-                    <div class="space-y-4">
-                        <input type="text" id="searchInput" placeholder="搜尋人員..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                        <div class="flex items-center space-x-2">
-                            <input type="text" id="nameInput" placeholder="輸入姓名..." class="flex-grow w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                            <button id="addNameBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-110 whitespace-nowrap flex items-center gap-1 shadow-md hover:shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                                新增
-                            </button>
-                        </div>
-                        <div id="nameList" class="space-y-2 max-h-96 overflow-y-auto pr-2"></div>
-                    </div>
-                </div>
+        <!-- 人員管理區 -->
+        <div class="mb-8 p-6 bg-gray-50/10 rounded-lg border border-[var(--color-border)]/50 no-screenshot">
+            <div id="togglePersonnelSection" class="flex justify-between items-center cursor-pointer">
+                <h2 class="text-xl font-semibold">人員名單管理</h2>
+                <button class="text-gray-600 hover:text-[var(--color-text-header)] transition-transform duration-300" id="personnelToggleButton">
+                    <i data-lucide="chevron-up" id="personnelToggleIcon"></i>
+                </button>
             </div>
-
-            <div class="lg:col-span-2">
-                <div class="bg-white p-6 rounded-2xl shadow-xl printable-area border-t-4 border-teal-500 card-hover">
-                    <div class="flex flex-wrap justify-between items-center mb-2 pb-3 gap-4">
-                        <h2 class="text-2xl font-bold flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            執禮人員輪值表
-                        </h2>
-                        <div class="flex flex-wrap gap-2 print-hide">
-                             <button id="quickAddBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-110 whitespace-nowrap text-sm sm:text-base flex items-center gap-1 shadow-md hover:shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 14.95a1 1 0 001.414 1.414l.707-.707a1 1 0 00-1.414-1.414l-.707.707zM9 16a1 1 0 102 0v1a1 1 0 10-2 0v-1zM4.343 5.757a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM2 10a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zM14.95 14.95a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707z" /></svg>
-                                新增
-                            </button>
-                            <button id="clearScheduleBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-all duration-300 transform hover:scale-110 whitespace-nowrap text-sm sm:text-base flex items-center gap-1 shadow-md hover:shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
-                                清除
-                            </button>
-                            <button id="printBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-300 transform hover:scale-110 whitespace-nowrap text-sm sm:text-base flex items-center gap-1 shadow-md hover:shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v3a2 2 0 002 2h6a2 2 0 002-2v-3h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" /></svg>
-                                列印
-                            </button>
-                        </div>
-                    </div>
-                     <p id="dateTitle" class="text-center font-semibold text-gray-600 my-4"></p>
-                    
-                    <div class="flex flex-wrap gap-2 items-center mb-4 p-4 bg-slate-50 rounded-lg print-hide">
-                        <select id="scheduleSelector" class="w-full sm:w-auto flex-grow p-2 border border-gray-300 rounded-lg"></select>
-                        <input type="text" id="saveNameInput" placeholder="輸入存檔名稱..." class="w-full sm:w-auto flex-grow p-2 border border-gray-300 rounded-lg">
-                        <div class="flex w-full sm:w-auto gap-2">
-                            <button id="saveScheduleBtn" class="w-1/2 sm:w-auto bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 flex items-center justify-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6a1 1 0 10-2 0v5.586L7.707 10.293z" /><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v3a1 1 0 11-2 0V4H7v3a1 1 0 01-2 0V4z" /></svg>
-                                儲存
-                            </button>
-                            <button id="deleteScheduleBtn" class="w-1/2 sm:w-auto bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 flex items-center justify-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 5a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M3 8a1 1 0 011-1h12a1 1 0 011 1v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8zm2 0v6h10V8H5z" clip-rule="evenodd" /></svg>
-                                刪除
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto hidden md:block">
-                        <table id="scheduleTable" class="w-full text-center border-collapse">
-                            <thead>
-                                <tr class="bg-slate-100">
-                                    <th class="p-3 font-semibold border border-gray-300 sticky left-0 bg-slate-200 z-10">職位</th>
-                                    <th class="p-3 font-semibold border border-gray-300 text-teal-600">星期一</th>
-                                    <th class="p-3 font-semibold border border-gray-300 text-indigo-600">星期二</th>
-                                    <th class="p-3 font-semibold border border-gray-300 text-purple-600">星期三</th>
-                                    <th class="p-3 font-semibold border border-gray-300 text-pink-600">星期四</th>
-                                    <th class="p-3 font-semibold border border-gray-300 text-orange-600">星期五</th>
-                                    <th class="p-3 font-semibold border border-gray-300 text-blue-600">星期六</th>
-                                    <th class="p-3 font-semibold border border-gray-300 text-red-600">星期日</th>
-                                </tr>
-                            </thead>
-                            <tbody id="scheduleBody"></tbody>
-                        </table>
-                    </div>
-                    
-                    <div id="mobileScheduleView" class="space-y-2 md:hidden"></div>
+            
+            <div id="personnelManagementContent" class="collapsible-content mt-4">
+                <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                    <input type="text" id="newName" placeholder="請輸入姓名" class="flex-grow w-full px-4 py-2 rounded-lg focus:outline-none">
+                    <button id="addNameBtn" class="action-btn w-full sm:w-auto btn-add">
+                        <i data-lucide="user-plus"></i>
+                        <span>新增人員</span>
+                    </button>
+                </div>
+                <div id="personnelList" class="flex flex-wrap gap-3">
+                    <!-- 人員名單 -->
+                </div>
+                <div class="mt-6 border-t pt-4 border-dashed" style="border-color: var(--color-border);">
+                     
                 </div>
             </div>
         </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 print-hide">
-            <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-indigo-500 card-hover">
-                <h3 class="text-xl font-bold border-b pb-2 mb-3">本週勤務統計</h3>
-                <div id="statsDashboard" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto"></div>
+        
+        <div id="scheduleArea">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">勤務分配表</h2>
+                <button id="geminiSuggestBtn" class="action-btn btn-ai-suggest no-screenshot">
+                    <i data-lucide="sparkles"></i>
+                    <span>✨ AI 智慧排班建議</span>
+                </button>
             </div>
-
-            <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-purple-500 card-hover">
-                <h3 class="text-xl font-bold border-b pb-2 mb-3">歷史勤務統計</h3>
-                <div class="flex flex-wrap gap-2 items-center mb-4">
-                    <select id="yearSelector" class="p-2 border border-gray-300 rounded-lg flex-grow sm:flex-grow-0"></select>
-                    <select id="monthSelector" class="p-2 border border-gray-300 rounded-lg flex-grow sm:flex-grow-0"></select>
-                    <button id="queryStatsBtn" class="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 w-full sm:w-auto">查詢</button>
-                </div>
-                <div id="historicalStatsDashboard" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
-                    <p class="text-gray-500 col-span-full">請選擇年月進行查詢。</p>
-                </div>
+            <!-- 勤務表 -->
+            <div class="table-container rounded-lg border border-[var(--color-border)]/80 overflow-hidden">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="w-16">職位</th>
+                            <th>星期一</th>
+                            <th>星期二</th>
+                            <th>星期三</th>
+                            <th>星期四</th>
+                            <th>星期五</th>
+                            <th>星期六</th>
+                            <th>星期日</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleBody">
+                        <!-- 表格內容 -->
+                    </tbody>
+                </table>
             </div>
         </div>
+        
+        <footer class="mt-8 text-center flex flex-wrap justify-center gap-4 no-screenshot">
+             <button id="screenshotBtn" class="action-btn btn-screenshot">
+                <i data-lucide="camera"></i>
+                <span>截圖分享</span>
+             </button>
+             <button id="geminiReminderBtn" class="action-btn btn-ai-reminder">
+                <i data-lucide="sparkles"></i>
+                <span>✨ 產生提醒訊息</span>
+            </button>
+             <button id="clearScheduleBtn" class="action-btn btn-clear">
+                <i data-lucide="trash-2"></i>
+                <span>清空排班</span>
+            </button>
+        </footer>
     </div>
 
-    <div id="customConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-sm mx-auto" style="animation: fadeIn 0.3s ease-out;">
-            <h3 id="confirmTitle" class="text-xl font-bold mb-4">確認操作</h3>
-            <p id="confirmMessage" class="text-gray-600 mb-6"></p>
-            <div class="flex justify-end space-x-4">
-                <button id="confirmCancel" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">取消</button>
-                <button id="confirmOk" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">確定</button>
+    <!-- AI 提醒訊息 Modal -->
+    <div id="reminderModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">AI 產生的提醒訊息</h2>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-[var(--color-text-header)]">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <p class="opacity-80 mb-4">您可以直接複製以下訊息，並傳送給團隊成員。</p>
+            <textarea id="reminderText" rows="10" class="w-full p-3 border rounded-lg bg-gray-50/10 focus:outline-none" readonly></textarea>
+            <div class="mt-6 text-right">
+                <button id="copyReminderBtn" class="action-btn btn-add">
+                    <i data-lucide="copy"></i>
+                    <span>複製訊息</span>
+                </button>
             </div>
         </div>
     </div>
     
-    <!-- 優化：操作回饋提示框 -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-[calc(100%+2rem)] transition-transform duration-500 ease-in-out z-50">
-        <p id="toastMessage"></p>
+    <!-- Screenshot Preview Modal -->
+    <div id="screenshotModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">預覽與分享</h2>
+                <button id="closeScreenshotModalBtn" class="text-gray-400 hover:text-[var(--color-text-header)]">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <p class="opacity-80 mb-4">圖片已產生。您可以在圖片上按右鍵「複製影像」，或點擊下方按鈕下載後，再傳送到 LINE 或其他通訊軟體。</p>
+            <div class="mb-4 p-2 border border-dashed border-[var(--color-border)] rounded-lg bg-white">
+                 <img id="screenshotImage" src="" alt="勤務表截圖" class="w-full h-auto rounded">
+            </div>
+            <div class="mt-6 text-right">
+                <a id="downloadScreenshotBtn" href="#" download="勤務表.png" class="action-btn btn-add">
+                    <i data-lucide="download"></i>
+                    <span>下載圖片</span>
+                </a>
+            </div>
+        </div>
     </div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const nameInput = document.getElementById('nameInput');
+            lucide.createIcons();
+
+            // --- Gemini API 設定 ---
+            const apiKey = ""; // <--- 在這裡貼上您的 Google Gemini API 金鑰
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            // DOM 元素
+            const newNameInput = document.getElementById('newName');
             const addNameBtn = document.getElementById('addNameBtn');
-            const nameList = document.getElementById('nameList');
+            const personnelListDiv = document.getElementById('personnelList');
             const scheduleBody = document.getElementById('scheduleBody');
-            const toggleNameList = document.getElementById('toggleNameList');
-            const nameManagementContent = document.getElementById('nameManagementContent');
-            const toggleIcon = document.getElementById('toggleIcon');
-            const quickAddBtn = document.getElementById('quickAddBtn');
             const clearScheduleBtn = document.getElementById('clearScheduleBtn');
-            const printBtn = document.getElementById('printBtn');
-            const searchInput = document.getElementById('searchInput');
-            const statsDashboard = document.getElementById('statsDashboard');
-            const scheduleSelector = document.getElementById('scheduleSelector');
-            const saveNameInput = document.getElementById('saveNameInput');
-            const saveScheduleBtn = document.getElementById('saveScheduleBtn');
-            const deleteScheduleBtn = document.getElementById('deleteScheduleBtn');
-            const dateTitle = document.getElementById('dateTitle');
-            const yearSelector = document.getElementById('yearSelector');
-            const monthSelector = document.getElementById('monthSelector');
-            const queryStatsBtn = document.getElementById('queryStatsBtn');
-            const historicalStatsDashboard = document.getElementById('historicalStatsDashboard');
-            const mobileScheduleView = document.getElementById('mobileScheduleView');
-            const scheduleContainer = document.querySelector('.printable-area');
-            const customConfirm = document.getElementById('customConfirm');
-            const confirmMessage = document.getElementById('confirmMessage');
-            const confirmCancel = document.getElementById('confirmCancel');
-            const confirmOk = document.getElementById('confirmOk');
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toastMessage');
+            const screenshotBtn = document.getElementById('screenshotBtn');
+            const geminiSuggestBtn = document.getElementById('geminiSuggestBtn');
+            const geminiReminderBtn = document.getElementById('geminiReminderBtn');
+            const reminderModal = document.getElementById('reminderModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const reminderText = document.getElementById('reminderText');
+            const copyReminderBtn = document.getElementById('copyReminderBtn');
+            const togglePersonnelSection = document.getElementById('togglePersonnelSection');
+            const personnelManagementContent = document.getElementById('personnelManagementContent');
+            const personnelToggleButton = document.getElementById('personnelToggleButton');
+            const screenshotModal = document.getElementById('screenshotModal');
+            const closeScreenshotModalBtn = document.getElementById('closeScreenshotModalBtn');
+            const screenshotImage = document.getElementById('screenshotImage');
+            const downloadScreenshotBtn = document.getElementById('downloadScreenshotBtn');
 
-            const roles = ['司儀', '上執禮', '下執禮', '下禮', '百孝經'];
-            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            // 應用程式狀態
+            let personnel = [
+                '玉惠', '幼英', '佳妙', '銘利', '興隆', '柏辰', '玉是', '冠華', 
+                '家達', '晨章', '蕙如', '家慶', '桂香', '富燭', '富雪', '夏梅', 
+                '方廷', '婇琂', '郁翔', '梵恆', '丞澤', '鳳璝', '榕鈿', '炳宏', 
+                '奕辰', '明軒', '語潔', '俊賢', '于盈', '仙娟', '思綺', '品萱', 
+                '冠霆', '素貞', '冠億', '昀軒', '美雲', '劉玉燕', '思頻', '俊仁', 
+                '玉恩', '惠如', '俊峰', '俊鋒', '昕燁', '暫停', '玉蕙', '婇娮', 
+                '亦辰', '玉燕', '育翔', '承澤', '彩炎', '橙澤'
+            ];
+            const positions = ['司儀', '上執禮', '下執禮', '下禮', '百孝經'];
+            const days = ['一', '二', '三', '四', '五', '六', '日'];
             
-            let appState = {
-                names: ['王惠', '幼英', '佳縈', '銘利', '興隆', '杜宜辰', '王美足', '冠華', '家達', '晨章', '蕙如', '家慶', '桂香', '富嬌', '喆靜', '夏梅', '方廷', '媖琯', '郁翔', '梵伍', '丞澤', '鳳瑣', '楊錦', '炳彥', '奕辰', '明軒', '語潔', '俊賢', '于萱', '仙媧', '思綺', '品萱', '冠霖', '素貞', '冠億', '昀軒', '美雲', '劉玉燕', '思頻', '俊戶', '王恩', '惠如', '俊峰', '俊緯', '昕瑋', '暫停', '王蕙', '媖姑', '亦辰', '玉燕', '長翔', '承澤', '彩支', '橙澤'],
-                schedules: { '預設排班': {} },
-                currentScheduleName: '預設排班'
-            };
+            // --- 收合功能 ---
+            togglePersonnelSection.addEventListener('click', () => {
+                const isHidden = personnelManagementContent.classList.toggle('hidden');
+                personnelToggleButton.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+                localStorage.setItem('personnelSectionHidden', isHidden);
+            });
 
-            // --- 優化：操作回饋提示 ---
-            let toastTimeout;
-            const showToast = (message, type = 'success') => {
-                clearTimeout(toastTimeout);
-                toastMessage.textContent = message;
-                toast.className = toast.className.replace(/bg-\w+-\d+/g, ''); // Reset color
-                if (type === 'success') toast.classList.add('bg-green-500');
-                else if (type === 'error') toast.classList.add('bg-red-500');
-                else toast.classList.add('bg-blue-500'); // info
-                toast.classList.remove('translate-x-[calc(100%+2rem)]');
-                toastTimeout = setTimeout(() => {
-                    toast.classList.add('translate-x-[calc(100%+2rem)]');
-                }, 3000);
-            };
-
-            const getWeekOfMonth = (date) => {
-                const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-                const dayOfMonth = date.getDate();
-                const dayOfWeek = startOfMonth.getDay() === 0 ? 6 : startOfMonth.getDay() - 1;
-                return Math.ceil((dayOfMonth + dayOfWeek) / 7);
-            };
-
-            let confirmCallback = null;
-            const showConfirm = (message, callback) => {
-                confirmMessage.textContent = message;
-                confirmCallback = callback;
-                customConfirm.classList.remove('hidden');
-            };
-            confirmOk.addEventListener('click', () => { if (confirmCallback) confirmCallback(); customConfirm.classList.add('hidden'); });
-            confirmCancel.addEventListener('click', () => customConfirm.classList.add('hidden'));
-
-            // --- 優化：更穩定的資料讀取 ---
-            const loadState = () => {
-                const saved = localStorage.getItem('scheduleAppState');
-                if (saved) {
-                    try {
-                        const parsedState = JSON.parse(saved);
-                        if (parsedState && typeof parsedState === 'object' && Array.isArray(parsedState.names) && typeof parsedState.schedules === 'object') {
-                            appState = parsedState;
-                        } else {
-                            throw new Error("Invalid state structure");
-                        }
-                    } catch (e) {
-                        console.error("無法解析儲存的資料，將使用預設值。", e);
-                        showToast("儲存的資料毀損，已重設。", 'error');
+            // --- Gemini API 功能 ---
+            async function callGeminiAPI(payload, isJson = false) {
+                 if (!apiKey) {
+                    alert("請先在程式碼中設定您的 Google Gemini API 金鑰！");
+                    return null;
+                }
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(`API 錯誤: ${error.error.message}`);
                     }
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!text) throw new Error("從 API 收到的回應格式不正確。");
+                    return text;
+                } catch (error) {
+                    console.error("呼叫 Gemini API 失敗:", error);
+                    alert(`與 AI 溝通時發生錯誤：${error.message}`);
+                    return null;
                 }
-                if (!appState.schedules) appState.schedules = { '預設排班': {} };
-                if (!appState.currentScheduleName || !appState.schedules[appState.currentScheduleName]) {
-                    appState.currentScheduleName = Object.keys(appState.schedules)[0] || '預設排班';
-                }
-                sortNames();
-            };
-            const saveState = () => localStorage.setItem('scheduleAppState', JSON.stringify(appState));
-            const sortNames = () => appState.names.sort((a, b) => a.localeCompare(b, 'zh-Hant'));
-            
-            const render = () => {
-                renderNameList();
-                renderSchedule();
-                renderWeeklyStats();
-                renderScheduleSelector();
-                updateDateTitleAndSavePlaceholder();
-            };
+            }
 
-            // --- 優化：空狀態提示 ---
-            const renderNameList = () => {
-                const filter = searchInput.value.toLowerCase();
-                const filteredNames = appState.names.filter(name => name.toLowerCase().includes(filter));
-                nameList.innerHTML = '';
-                if (filteredNames.length === 0) {
-                    const message = appState.names.length === 0 ? '名單是空的，請新增人員。' : '找不到符合搜尋的人員。';
-                    nameList.innerHTML = `<p class="text-gray-500 text-center p-4">${message}</p>`;
+            // --- 修改後的功能：隨機排班 ---
+            geminiSuggestBtn.addEventListener('click', () => {
+                if (personnel.length === 0) {
+                    alert("人員名單是空的，無法進行排班。");
                     return;
                 }
-                filteredNames.forEach(name => {
-                    const nameElement = document.createElement('div');
-                    nameElement.className = 'flex items-center justify-between bg-slate-100 p-2 rounded-lg';
-                    nameElement.innerHTML = `<span>${name}</span><button data-name="${name}" class="delete-btn text-red-500 hover:text-red-700 focus:outline-none"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button>`;
-                    nameList.appendChild(nameElement);
-                });
-            };
+                const originalContent = geminiSuggestBtn.innerHTML;
+                
+                geminiSuggestBtn.disabled = true;
+                geminiSuggestBtn.innerHTML = `<i data-lucide="shuffle" class="loading-spinner"></i><span>隨機排班中...</span>`;
+                lucide.createIcons();
 
-            const renderSchedule = () => {
-                const currentSchedule = appState.schedules[appState.currentScheduleName] || {};
-                scheduleBody.innerHTML = '';
-                mobileScheduleView.innerHTML = '';
-                const optionsHTML = '<option value="">--選擇--</option>' + appState.names.map(name => `<option value="${name}">${name}</option>`).join('');
-
-                roles.forEach(role => {
-                    const row = document.createElement('tr');
-                    row.className = 'even:bg-slate-50';
-                    let rowHTML = `<td class="p-2 font-medium border border-gray-300 sticky left-0 bg-white md:bg-slate-100 z-10">${role}</td>`;
-                    days.forEach(day => {
-                        const selectedValue = currentSchedule[`${role}-${day}`] || '';
-                        rowHTML += `
-                            <td class="p-2 border border-gray-300">
-                                <div class="relative">
-                                    <select data-role="${role}" data-day="${day}" class="w-full appearance-none bg-white p-2 pl-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                                        ${optionsHTML.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.646 7.646a.5.5 0 0 1 .708 0L10 11.293l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/></svg>
-                                    </div>
-                                </div>
-                            </td>`;
+                // 使用一個短的延遲來確保 UI 更新到載入狀態
+                setTimeout(() => {
+                    const selects = document.querySelectorAll('#scheduleBody select');
+                    selects.forEach(select => {
+                        const randomIndex = Math.floor(Math.random() * personnel.length);
+                        const randomPerson = personnel[randomIndex];
+                        select.value = randomPerson;
                     });
-                    row.innerHTML = rowHTML;
+    
+                    saveState();
+                    alert("已成功將所有人員隨機排入班表！");
+    
+                    geminiSuggestBtn.disabled = false;
+                    geminiSuggestBtn.innerHTML = originalContent;
+                    lucide.createIcons();
+                }, 50); 
+            });
+
+            geminiReminderBtn.addEventListener('click', async () => {
+                let scheduleSummary = "本週勤務分配如下：\n\n";
+                let hasAssignments = false;
+                positions.forEach(pos => {
+                    let positionAssignments = [];
+                    days.forEach(day => {
+                        const select = document.getElementById(`cell-${pos}-${day}`);
+                        if (select && select.value) {
+                             positionAssignments.push(`星期${day}: ${select.value}`);
+                             hasAssignments = true;
+                        }
+                    });
+                    if (positionAssignments.length > 0) {
+                        scheduleSummary += `【${pos}】\n- ${positionAssignments.join('\n- ')}\n\n`;
+                    }
+                });
+
+                if (!hasAssignments) {
+                    alert("勤務表是空的，請先排班再產生提醒訊息。");
+                    return;
+                }
+                
+                const originalContent = geminiReminderBtn.innerHTML;
+
+                geminiReminderBtn.disabled = true;
+                geminiReminderBtn.innerHTML = `<i data-lucide="loader-2" class="loading-spinner"></i><span>AI 生成中...</span>`;
+                lucide.createIcons();
+
+                const prompt = `你是一位友善的團隊助理。請根據以下的勤務分配摘要，撰寫一段語氣溫暖、格式清晰的提醒訊息，適合在團隊的即時通訊軟體中發布。訊息開頭可以親切地問候大家，結尾可以加上鼓勵的話語。勤務摘要:${scheduleSummary}`;
+                
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                const resultText = await callGeminiAPI(payload);
+
+                if (resultText) {
+                    reminderText.value = resultText;
+                    reminderModal.classList.add('visible');
+                }
+                
+                geminiReminderBtn.disabled = false;
+                geminiReminderBtn.innerHTML = originalContent;
+                lucide.createIcons();
+            });
+            
+            closeModalBtn.addEventListener('click', () => reminderModal.classList.remove('visible'));
+            reminderModal.addEventListener('click', (e) => { if (e.target === reminderModal) reminderModal.classList.remove('visible'); });
+            
+            closeScreenshotModalBtn.addEventListener('click', () => screenshotModal.classList.remove('visible'));
+            screenshotModal.addEventListener('click', (e) => { 
+                if (e.target === screenshotModal) screenshotModal.classList.remove('visible'); 
+            });
+            
+            copyReminderBtn.addEventListener('click', () => {
+                reminderText.select();
+                try {
+                    document.execCommand('copy');
+                    copyReminderBtn.querySelector('span').textContent = '已複製！';
+                    setTimeout(() => { copyReminderBtn.querySelector('span').textContent = '複製訊息'; }, 2000);
+                } catch (err) {
+                    alert('複製失敗，您的瀏覽器可能不支援此功能。');
+                }
+            });
+
+            screenshotBtn.addEventListener('click', async () => {
+                const captureTarget = document.getElementById('scheduleArea');
+                const buttonToHide = document.getElementById('geminiSuggestBtn');
+            
+                buttonToHide.style.visibility = 'hidden';
+                captureTarget.style.padding = '1.5rem';
+            
+                screenshotBtn.disabled = true;
+                screenshotBtn.querySelector('span').textContent = '截圖中...';
+            
+                try {
+                    const canvas = await html2canvas(captureTarget, {
+                        scale: 2,
+                        logging: false,
+                        useCORS: true,
+                        backgroundColor: getComputedStyle(document.body).getPropertyValue('--color-bg')
+                    });
+            
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    const file = new File([blob], '勤務表.png', { type: 'image/png' });
+            
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: '一週勤務表',
+                            text: '這是一週勤務分配表。'
+                        });
+                    } else {
+                        const imageUrl = URL.createObjectURL(blob);
+                        screenshotImage.src = imageUrl;
+                        downloadScreenshotBtn.href = imageUrl;
+                        screenshotModal.classList.add('visible');
+                    }
+                } catch (error) {
+                    console.error('截圖/分享失敗:', error);
+                    if (error.name !== 'AbortError') { // AbortError means user cancelled the share dialog
+                        alert('抱歉，截圖或分享功能發生錯誤。');
+                    }
+                } finally {
+                    buttonToHide.style.visibility = 'visible';
+                    captureTarget.style.padding = '';
+            
+                    screenshotBtn.disabled = false;
+                    screenshotBtn.querySelector('span').textContent = '截圖分享';
+                }
+            });
+
+            function renderPersonnelList() {
+                personnel = [...new Set(personnel)];
+                personnelListDiv.innerHTML = '';
+                if (personnel.length === 0) { personnelListDiv.innerHTML = '<p class="opacity-70">目前沒有人員，請新增。</p>'; }
+                personnel.forEach((name, index) => {
+                    const personTag = document.createElement('div');
+                    personTag.className = 'flex items-center gap-2 person-tag px-3 py-1.5 rounded-full text-sm font-medium';
+                    personTag.innerHTML = `<span>${escapeHTML(name)}</span><button class="delete-btn" data-index="${index}" title="刪除 ${escapeHTML(name)}">×</button>`;
+                    personnelListDiv.appendChild(personTag);
+                });
+            }
+            function renderSchedule() {
+                scheduleBody.innerHTML = '';
+                positions.forEach(position => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td class="position-header">${escapeHTML(position)}</td>`;
+                    days.forEach(day => {
+                        const cell = document.createElement('td');
+                        const select = document.createElement('select');
+                        select.id = `cell-${position}-${day}`;
+                        cell.appendChild(select);
+                        row.appendChild(cell);
+                    });
                     scheduleBody.appendChild(row);
                 });
+            }
+            function updateAllDropdowns() {
+                const selects = document.querySelectorAll('#scheduleBody select');
+                selects.forEach(select => {
+                    const selectedValue = select.value;
+                    select.innerHTML = '<option value="">-- 請選擇 --</option>';
+                    const uniquePersonnel = [...new Set(personnel)];
+                    uniquePersonnel.forEach(name => { select.innerHTML += `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`; });
+                    if (personnel.includes(selectedValue)) { select.value = selectedValue; }
+                });
+            }
+            function saveState() {
+                localStorage.setItem('dutyRosterPersonnel', JSON.stringify([...new Set(personnel)]));
+                const scheduleData = {};
+                document.querySelectorAll('#scheduleBody select').forEach(select => { if (select.value) { scheduleData[select.id] = select.value; } });
+                localStorage.setItem('dutyRosterSchedule', JSON.stringify(scheduleData));
+            }
+            function loadState() {
+                const savedPersonnel = localStorage.getItem('dutyRosterPersonnel');
+                if (savedPersonnel) { 
+                    const loadedPersonnel = JSON.parse(savedPersonnel);
+                    personnel = [...new Set([...personnel, ...loadedPersonnel])];
+                }
                 
-                const dayNames = { mon: '星期一', tue: '星期二', wed: '星期三', thu: '星期四', fri: '星期五', sat: '星期六', sun: '星期日' };
-                const dayColors = { mon: 'teal', tue: 'indigo', wed: 'purple', thu: 'pink', fri: 'orange', sat: 'blue', sun: 'red' };
-                days.forEach(day => {
-                    const dayCard = document.createElement('div');
-                    dayCard.className = `bg-white rounded-lg p-3 border-l-4 border-${dayColors[day]}-500 shadow`;
-                    let cardHeader = `<h3 class="text-lg font-bold text-${dayColors[day]}-600 mb-2">${dayNames[day]}</h3>`;
-                    let cardBody = '<div class="space-y-2">';
-                    roles.forEach(role => {
-                        const selectedValue = currentSchedule[`${role}-${day}`] || '';
-                        cardBody += `
-                            <div>
-                                <label class="block text-gray-500 text-xs font-medium">${role}</label>
-                                <div class="relative">
-                                    <select data-role="${role}" data-day="${day}" class="w-full appearance-none bg-white p-1.5 pl-3 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                                        ${optionsHTML.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.646 7.646a.5.5 0 0 1 .708 0L10 11.293l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    cardBody += '</div>';
-                    dayCard.innerHTML = cardHeader + cardBody;
-                    mobileScheduleView.appendChild(dayCard);
-                });
-            };
-            
-            const renderWeeklyStats = () => {
-                const currentSchedule = appState.schedules[appState.currentScheduleName] || {};
-                const counts = {};
-                Object.values(currentSchedule).forEach(name => {
-                    if (name) counts[name] = (counts[name] || 0) + 1;
-                });
-                statsDashboard.innerHTML = '';
-                if (Object.keys(counts).length === 0) {
-                     statsDashboard.innerHTML = '<p class="text-gray-500 col-span-full">目前無人排班</p>';
-                     return;
-                }
-                Object.entries(counts).sort(([,a],[,b]) => b-a).forEach(([name, count]) => {
-                    const statEl = document.createElement('div');
-                    statEl.className = 'bg-slate-100 p-2 rounded-lg text-sm';
-                    statEl.innerHTML = `<span class="font-bold">${name}:</span> <span class="text-blue-600 font-semibold">${count} 次</span>`;
-                    statsDashboard.appendChild(statEl);
-                });
-            };
-
-            const renderScheduleSelector = () => {
-                scheduleSelector.innerHTML = '';
-                Object.keys(appState.schedules).forEach(name => {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
-                    scheduleSelector.appendChild(option);
-                });
-                scheduleSelector.value = appState.currentScheduleName;
-            };
-
-            const updateDateTitleAndSavePlaceholder = () => {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = now.getMonth() + 1;
-                const week = getWeekOfMonth(now);
-                const title = `${year}年 ${month}月 第 ${week} 週`;
-                dateTitle.textContent = title;
-                saveNameInput.placeholder = title;
-            };
-
-            const handleAddName = () => {
-                const name = nameInput.value.trim();
-                if (name && !appState.names.includes(name)) {
-                    appState.names.push(name);
-                    sortNames();
-                    saveState();
-                    render();
-                }
-                nameInput.value = '';
-                nameInput.focus();
-            };
-
-            nameList.addEventListener('click', (e) => {
-                const deleteBtn = e.target.closest('.delete-btn');
-                if (deleteBtn) {
-                    const nameToDelete = deleteBtn.dataset.name;
-                    showConfirm(`確定要刪除 "${nameToDelete}" 嗎？此人員的所有排班將被清除。`, () => {
-                        appState.names = appState.names.filter(n => n !== nameToDelete);
-                        Object.values(appState.schedules).forEach(schedule => {
-                            Object.keys(schedule).forEach(key => {
-                                if (schedule[key] === nameToDelete) schedule[key] = '';
-                            });
-                        });
-                        saveState();
-                        render();
-                    });
-                }
-            });
-
-            scheduleContainer.addEventListener('change', (e) => {
-                if (e.target.tagName === 'SELECT' && e.target.dataset.role) {
-                    const { role, day } = e.target.dataset;
-                    appState.schedules[appState.currentScheduleName][`${role}-${day}`] = e.target.value;
-                    saveState();
-                    renderWeeklyStats(); // 只更新統計，避免重繪整個表格造成閃爍
-                }
-            });
-
-            saveScheduleBtn.addEventListener('click', () => {
-                let name = saveNameInput.value.trim();
-                if (!name) name = saveNameInput.placeholder;
-                
-                if (appState.schedules[name] && name !== appState.currentScheduleName) {
-                    showConfirm(`存檔名稱 "${name}" 已存在，您要覆蓋它嗎？`, () => {
-                        appState.schedules[name] = { ...(appState.schedules[appState.currentScheduleName] || {}) };
-                        appState.currentScheduleName = name;
-                        saveState();
-                        render();
-                        saveNameInput.value = '';
-                        showToast('排班表已覆蓋儲存');
-                    });
+                const isHidden = localStorage.getItem('personnelSectionHidden') === 'true';
+                if (isHidden) {
+                    personnelManagementContent.classList.add('hidden');
+                    personnelToggleButton.style.transform = 'rotate(180deg)';
                 } else {
-                    const oldName = appState.currentScheduleName;
-                    const currentData = { ...(appState.schedules[oldName] || {}) };
-                    if (name !== oldName && oldName !== '預設排班' && Object.keys(currentData).length === 0) {
-                       delete appState.schedules[oldName];
+                    personnelManagementContent.classList.remove('hidden');
+                    personnelToggleButton.style.transform = 'rotate(0deg)';
+                }
+                lucide.createIcons();
+                renderSchedule();
+                renderPersonnelList();
+                updateAllDropdowns();
+                const savedSchedule = localStorage.getItem('dutyRosterSchedule');
+                if (savedSchedule) {
+                    const scheduleData = JSON.parse(savedSchedule);
+                    for (const id in scheduleData) { const select = document.getElementById(id); if (select) { select.value = scheduleData[id]; } }
+                }
+            }
+            function escapeHTML(str) { return str.replace(/[&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[match]); }
+            addNameBtn.addEventListener('click', () => {
+                const name = newNameInput.value.trim();
+                if (name && !personnel.includes(name)) {
+                    personnel.push(name);
+                    newNameInput.value = '';
+                    renderPersonnelList();
+                    updateAllDropdowns();
+                    saveState();
+                } else if (personnel.includes(name)) { alert('此姓名已存在！'); }
+                newNameInput.focus();
+            });
+            newNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addNameBtn.click(); });
+            personnelListDiv.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const nameToDelete = e.target.previousElementSibling.textContent;
+                    const actualIndex = personnel.indexOf(nameToDelete);
+                    if (actualIndex > -1) {
+                         if (confirm(`確定要刪除「${personnel[actualIndex]}」嗎？`)) {
+                            personnel.splice(actualIndex, 1);
+                            renderPersonnelList();
+                            updateAllDropdowns();
+                            saveState();
+                        }
                     }
-                    appState.schedules[name] = currentData;
-                    appState.currentScheduleName = name;
-                    saveState();
-                    render();
-                    saveNameInput.value = '';
-                    showToast('排班表已儲存');
                 }
             });
-
-            scheduleSelector.addEventListener('change', (e) => {
-                appState.currentScheduleName = e.target.value;
-                saveState();
-                render();
-            });
-            
-            deleteScheduleBtn.addEventListener('click', () => {
-                const nameToDelete = scheduleSelector.value;
-                if (Object.keys(appState.schedules).length <= 1) {
-                    showToast('不能刪除最後一個排班表！', 'error');
-                    return;
-                }
-                showConfirm(`確定要刪除排班表 "${nameToDelete}" 嗎？`, () => {
-                    delete appState.schedules[nameToDelete];
-                    appState.currentScheduleName = Object.keys(appState.schedules)[0];
-                    saveState();
-                    render();
-                    showToast('排班表已刪除');
-                });
-            });
-
+            scheduleBody.addEventListener('change', (e) => { if (e.target.tagName === 'SELECT') saveState(); });
             clearScheduleBtn.addEventListener('click', () => {
-                 showConfirm('確定要清除當前排班表的所有內容嗎？', () => {
-                    appState.schedules[appState.currentScheduleName] = {};
+                if (confirm('確定要清空所有已選擇的排班資料嗎？此操作無法復原。')) {
+                    document.querySelectorAll('#scheduleBody select').forEach(select => { select.value = ''; });
                     saveState();
-                    render();
-                    showToast('排班表已清空', 'info');
-                });
+                }
             });
 
-            queryStatsBtn.addEventListener('click', () => {
-                const year = yearSelector.value;
-                const month = monthSelector.value;
-                const monthlyCounts = {};
-
-                Object.entries(appState.schedules).forEach(([name, scheduleData]) => {
-                    if (name.includes(year) && name.includes(`${month}月`)) {
-                        Object.values(scheduleData).forEach(person => {
-                            if (person) monthlyCounts[person] = (monthlyCounts[person] || 0) + 1;
-                        });
-                    }
-                });
-
-                historicalStatsDashboard.innerHTML = '';
-                if (Object.keys(monthlyCounts).length === 0) {
-                     historicalStatsDashboard.innerHTML = `<p class="text-gray-500 col-span-full">在 ${year} 年 ${month} 月找不到符合的排班資料。</p>`;
-                     return;
-                }
-                Object.entries(monthlyCounts).sort(([,a],[,b]) => b-a).forEach(([name, count]) => {
-                    const statEl = document.createElement('div');
-                    statEl.className = 'bg-slate-100 p-2 rounded-lg text-sm';
-                    statEl.innerHTML = `<span class="font-bold">${name}:</span> <span class="text-teal-600 font-semibold">${count} 次</span>`;
-                    historicalStatsDashboard.appendChild(statEl);
-                });
-            });
-
-            searchInput.addEventListener('input', renderNameList);
-            nameInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddName());
-            addNameBtn.addEventListener('click', handleAddName);
-            
-            toggleNameList.addEventListener('click', () => {
-                nameManagementContent.classList.toggle('is-open');
-                toggleIcon.classList.toggle('rotate-180');
-            });
-            
-            quickAddBtn.addEventListener('click', () => {
-                if(!nameManagementContent.classList.contains('is-open')){
-                    nameManagementContent.classList.add('is-open');
-                    toggleIcon.classList.add('rotate-180');
-                }
-                nameInput.focus();
-            });
-            printBtn.addEventListener('click', () => window.print());
-
-            const populateMonthSelector = (selectedYear) => {
-                const startYear = 2025;
-                const startMonth = (parseInt(selectedYear, 10) === startYear) ? 10 : 1; 
-                const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
-                
-                const currentMonthValue = monthSelector.value;
-                monthSelector.innerHTML = '';
-                
-                for (let i = startMonth; i <= 12; i++) {
-                    const option = document.createElement('option');
-                    option.value = i;
-                    option.textContent = monthNames[i-1];
-                    monthSelector.appendChild(option);
-                }
-
-                if (monthSelector.querySelector(`option[value="${currentMonthValue}"]`)) {
-                    monthSelector.value = currentMonthValue;
-                } else {
-                    monthSelector.value = startMonth;
-                }
-            };
-            
-            yearSelector.addEventListener('change', (e) => populateMonthSelector(e.target.value));
-
-            const init = () => {
-                loadState();
-                const startYear = 2025;
-                const endYear = new Date().getFullYear() + 5; 
-                yearSelector.innerHTML = '';
-                for (let i = endYear; i >= startYear; i--) {
-                    const option = document.createElement('option');
-                    option.value = i;
-                    option.textContent = `${i}年`;
-                    yearSelector.appendChild(option);
-                }
-                const currentYear = new Date().getFullYear();
-                yearSelector.value = Math.max(currentYear, startYear);
-                populateMonthSelector(yearSelector.value); 
-                const currentMonth = new Date().getMonth() + 1;
-                if (monthSelector.querySelector(`option[value="${currentMonth}"]`)) {
-                    monthSelector.value = currentMonth;
-                }
-                render();
-            };
-
-            init();
+            // --- 初始化 ---
+            loadState();
         });
     </script>
 </body>
