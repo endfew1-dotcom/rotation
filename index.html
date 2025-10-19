@@ -72,7 +72,6 @@
             margin-top: 1rem;
         }
         
-        /* 移除舊的 select 樣式，因為將改用 Tailwind classes 直接控制 */
         #scheduleTable td { height: auto; min-height: 60px; vertical-align: middle; }
         
         @media print {
@@ -217,6 +216,11 @@
             </div>
         </div>
     </div>
+    
+    <!-- 優化：操作回饋提示框 -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-[calc(100%+2rem)] transition-transform duration-500 ease-in-out z-50">
+        <p id="toastMessage"></p>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -247,6 +251,8 @@
             const confirmMessage = document.getElementById('confirmMessage');
             const confirmCancel = document.getElementById('confirmCancel');
             const confirmOk = document.getElementById('confirmOk');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
 
             const roles = ['司儀', '上執禮', '下執禮', '下禮', '百孝經'];
             const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -255,6 +261,21 @@
                 names: ['王惠', '幼英', '佳縈', '銘利', '興隆', '杜宜辰', '王美足', '冠華', '家達', '晨章', '蕙如', '家慶', '桂香', '富嬌', '喆靜', '夏梅', '方廷', '媖琯', '郁翔', '梵伍', '丞澤', '鳳瑣', '楊錦', '炳彥', '奕辰', '明軒', '語潔', '俊賢', '于萱', '仙媧', '思綺', '品萱', '冠霖', '素貞', '冠億', '昀軒', '美雲', '劉玉燕', '思頻', '俊戶', '王恩', '惠如', '俊峰', '俊緯', '昕瑋', '暫停', '王蕙', '媖姑', '亦辰', '玉燕', '長翔', '承澤', '彩支', '橙澤'],
                 schedules: { '預設排班': {} },
                 currentScheduleName: '預設排班'
+            };
+
+            // --- 優化：操作回饋提示 ---
+            let toastTimeout;
+            const showToast = (message, type = 'success') => {
+                clearTimeout(toastTimeout);
+                toastMessage.textContent = message;
+                toast.className = toast.className.replace(/bg-\w+-\d+/g, ''); // Reset color
+                if (type === 'success') toast.classList.add('bg-green-500');
+                else if (type === 'error') toast.classList.add('bg-red-500');
+                else toast.classList.add('bg-blue-500'); // info
+                toast.classList.remove('translate-x-[calc(100%+2rem)]');
+                toastTimeout = setTimeout(() => {
+                    toast.classList.add('translate-x-[calc(100%+2rem)]');
+                }, 3000);
             };
 
             const getWeekOfMonth = (date) => {
@@ -273,11 +294,26 @@
             confirmOk.addEventListener('click', () => { if (confirmCallback) confirmCallback(); customConfirm.classList.add('hidden'); });
             confirmCancel.addEventListener('click', () => customConfirm.classList.add('hidden'));
 
+            // --- 優化：更穩定的資料讀取 ---
             const loadState = () => {
                 const saved = localStorage.getItem('scheduleAppState');
-                if (saved) appState = JSON.parse(saved);
+                if (saved) {
+                    try {
+                        const parsedState = JSON.parse(saved);
+                        if (parsedState && typeof parsedState === 'object' && Array.isArray(parsedState.names) && typeof parsedState.schedules === 'object') {
+                            appState = parsedState;
+                        } else {
+                            throw new Error("Invalid state structure");
+                        }
+                    } catch (e) {
+                        console.error("無法解析儲存的資料，將使用預設值。", e);
+                        showToast("儲存的資料毀損，已重設。", 'error');
+                    }
+                }
                 if (!appState.schedules) appState.schedules = { '預設排班': {} };
-                if (!appState.currentScheduleName) appState.currentScheduleName = '預設排班';
+                if (!appState.currentScheduleName || !appState.schedules[appState.currentScheduleName]) {
+                    appState.currentScheduleName = Object.keys(appState.schedules)[0] || '預設排班';
+                }
                 sortNames();
             };
             const saveState = () => localStorage.setItem('scheduleAppState', JSON.stringify(appState));
@@ -291,10 +327,16 @@
                 updateDateTitleAndSavePlaceholder();
             };
 
+            // --- 優化：空狀態提示 ---
             const renderNameList = () => {
                 const filter = searchInput.value.toLowerCase();
                 const filteredNames = appState.names.filter(name => name.toLowerCase().includes(filter));
                 nameList.innerHTML = '';
+                if (filteredNames.length === 0) {
+                    const message = appState.names.length === 0 ? '名單是空的，請新增人員。' : '找不到符合搜尋的人員。';
+                    nameList.innerHTML = `<p class="text-gray-500 text-center p-4">${message}</p>`;
+                    return;
+                }
                 filteredNames.forEach(name => {
                     const nameElement = document.createElement('div');
                     nameElement.className = 'flex items-center justify-between bg-slate-100 p-2 rounded-lg';
@@ -309,7 +351,6 @@
                 mobileScheduleView.innerHTML = '';
                 const optionsHTML = '<option value="">--選擇--</option>' + appState.names.map(name => `<option value="${name}">${name}</option>`).join('');
 
-                // 渲染電腦版表格 - 更新
                 roles.forEach(role => {
                     const row = document.createElement('tr');
                     row.className = 'even:bg-slate-50';
@@ -320,7 +361,7 @@
                             <td class="p-2 border border-gray-300">
                                 <div class="relative">
                                     <select data-role="${role}" data-day="${day}" class="w-full appearance-none bg-white p-2 pl-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                                        ${optionsHTML.replace(\`value="\${selectedValue}"\`, \`value="\${selectedValue}" selected\`)}
+                                        ${optionsHTML.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
                                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.646 7.646a.5.5 0 0 1 .708 0L10 11.293l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/></svg>
@@ -332,29 +373,28 @@
                     scheduleBody.appendChild(row);
                 });
                 
-                // 渲染手機版卡片 - 更新
                 const dayNames = { mon: '星期一', tue: '星期二', wed: '星期三', thu: '星期四', fri: '星期五', sat: '星期六', sun: '星期日' };
                 const dayColors = { mon: 'teal', tue: 'indigo', wed: 'purple', thu: 'pink', fri: 'orange', sat: 'blue', sun: 'red' };
                 days.forEach(day => {
                     const dayCard = document.createElement('div');
-                    dayCard.className = \`bg白色ㄧ rounded-lg p-3 border-l-4 border-\${dayColors[day]}-500 shadow\`.replace("白色ㄧ", "white");
-                    let cardHeader = \`<h3 class="text-lg font-bold text-\${dayColors[day]}-600 mb-2">\${dayNames[day]}</h3>\`;
+                    dayCard.className = `bg-white rounded-lg p-3 border-l-4 border-${dayColors[day]}-500 shadow`;
+                    let cardHeader = `<h3 class="text-lg font-bold text-${dayColors[day]}-600 mb-2">${dayNames[day]}</h3>`;
                     let cardBody = '<div class="space-y-2">';
                     roles.forEach(role => {
-                        const selectedValue = currentSchedule[\`\${role}-\${day}\`] || '';
-                        cardBody += \`
+                        const selectedValue = currentSchedule[`${role}-${day}`] || '';
+                        cardBody += `
                             <div>
-                                <label class="block text-gray-500 text-xs font-medium">\${role}</label>
+                                <label class="block text-gray-500 text-xs font-medium">${role}</label>
                                 <div class="relative">
-                                    <select data-role="\${role}" data-day="\${day}" class="w-full appearance-none bg-white p-1.5 pl-3 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                                        \${optionsHTML.replace(\`value="\${selectedValue}"\`, \`value="\${selectedValue}" selected\`)}
+                                    <select data-role="${role}" data-day="${day}" class="w-full appearance-none bg-white p-1.5 pl-3 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
+                                        ${optionsHTML.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
                                          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.646 7.646a.5.5 0 0 1 .708 0L10 11.293l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/></svg>
                                     </div>
                                 </div>
                             </div>
-                        \`;
+                        `;
                     });
                     cardBody += '</div>';
                     dayCard.innerHTML = cardHeader + cardBody;
@@ -436,7 +476,7 @@
                     const { role, day } = e.target.dataset;
                     appState.schedules[appState.currentScheduleName][`${role}-${day}`] = e.target.value;
                     saveState();
-                    render();
+                    renderWeeklyStats(); // 只更新統計，避免重繪整個表格造成閃爍
                 }
             });
 
@@ -451,11 +491,12 @@
                         saveState();
                         render();
                         saveNameInput.value = '';
+                        showToast('排班表已覆蓋儲存');
                     });
                 } else {
                     const oldName = appState.currentScheduleName;
                     const currentData = { ...(appState.schedules[oldName] || {}) };
-                    if (name !== oldName && oldName !== '預設排班' && !Object.keys(currentData).length) {
+                    if (name !== oldName && oldName !== '預設排班' && Object.keys(currentData).length === 0) {
                        delete appState.schedules[oldName];
                     }
                     appState.schedules[name] = currentData;
@@ -463,6 +504,7 @@
                     saveState();
                     render();
                     saveNameInput.value = '';
+                    showToast('排班表已儲存');
                 }
             });
 
@@ -475,13 +517,15 @@
             deleteScheduleBtn.addEventListener('click', () => {
                 const nameToDelete = scheduleSelector.value;
                 if (Object.keys(appState.schedules).length <= 1) {
-                    alert('不能刪除最後一個排班表！'); return;
+                    showToast('不能刪除最後一個排班表！', 'error');
+                    return;
                 }
                 showConfirm(`確定要刪除排班表 "${nameToDelete}" 嗎？`, () => {
                     delete appState.schedules[nameToDelete];
                     appState.currentScheduleName = Object.keys(appState.schedules)[0];
                     saveState();
                     render();
+                    showToast('排班表已刪除');
                 });
             });
 
@@ -490,6 +534,7 @@
                     appState.schedules[appState.currentScheduleName] = {};
                     saveState();
                     render();
+                    showToast('排班表已清空', 'info');
                 });
             });
 
@@ -587,3 +632,4 @@
     </script>
 </body>
 </html>
+
