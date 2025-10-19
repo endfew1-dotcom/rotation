@@ -14,33 +14,6 @@
             display: block;
         }
         
-        /* 更新：調整直立文字樣式 */
-        #scheduleTable select {
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            -webkit-appearance: none; /* 隱藏原生箭頭 */
-            -moz-appearance: none;
-            appearance: none;
-            height: 90px; /* 給予足夠高度 */
-            text-align: center;
-            padding: 4px;
-            cursor: pointer;
-            /* 自訂箭頭 (修正為向下箭頭) */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: center bottom 6px;
-            background-size: 1em auto;
-            /* 新增：放大字體並置中 */
-            font-size: 1.125rem; /* 等同 text-lg */
-            font-weight: 500;
-            margin: 0 auto; /* 確保在td中水平置中 */
-        }
-
-        #scheduleTable td {
-            vertical-align: middle;
-            height: 100px; /* 調整儲存格高度以容納直立文字 */
-        }
-
         /* 列印樣式 */
         @media print {
             body * {
@@ -129,7 +102,7 @@
                         <input type="text" id="saveNameInput" placeholder="輸入存檔名稱..." class="w-full sm:w-auto flex-grow p-2 border border-gray-300 rounded-lg">
                         <div class="flex w-full sm:w-auto gap-2">
                             <button id="saveScheduleBtn" class="w-1/2 sm:w-auto bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600">儲存</button>
-                            <button id="deleteScheduleBtn" class="w-1/2 sm:w-auto bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600">刪除</button>
+                            <button id="deleteScheduleBtn" class="w-1/2 sm:w-auto bg-red-500 text白 px-3 py-2 rounded-lg hover:bg-red-600">刪除</button>
                         </div>
                     </div>
 
@@ -184,7 +157,7 @@
     </div>
 
     <!-- 自訂確認視窗 -->
-    <div id="customConfirm" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div id="customConfirm" class="固定 inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-sm mx-auto">
             <h3 id="confirmTitle" class="text-xl font-bold mb-4">確認操作</h3>
             <p id="confirmMessage" class="text-gray-600 mb-6"></p>
@@ -300,7 +273,7 @@
                     let rowHTML = `<td class="p-2 font-medium border border-gray-300 sticky left-0 bg-white md:bg-gray-50 z-10">${role}</td>`;
                     days.forEach(day => {
                         const selectedValue = currentSchedule[`${role}-${day}`] || '';
-                        rowHTML += `<td class="p-0 sm:p-2 border border-gray-300"><select data-role="${role}" data-day="${day}" class="w-full bg-transparent p-1 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">${optionsHTML.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}</select></td>`;
+                        rowHTML += `<td class="p-2 border border-gray-300"><select data-role="${role}" data-day="${day}" class="w-full bg-transparent p-1 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">${optionsHTML.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}</select></td>`;
                     });
                     row.innerHTML = rowHTML;
                     scheduleBody.appendChild(row);
@@ -564,4 +537,3 @@
     </script>
 </body>
 </html>
-
