@@ -28,27 +28,39 @@
             --color-accent-success: #27ae60;
         }
 
+        /* 頁面載入動畫 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* 整體樣式 */
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: var(--color-bg);
             background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="none" stroke-width="1" stroke="rgba(185, 147, 108, 0.07)" d="M-2,2 l4,-4 M0,20 l20,-20 M18,22 l4,-4"/></svg>');
             color: var(--color-text-body);
+            animation: fadeIn 0.8s ease-out;
         }
 
         #captureArea {
             background-color: var(--color-surface);
             backdrop-filter: blur(16px);
             border: 2px solid transparent;
-            box-shadow: 0 15px 40px -15px rgba(74, 63, 53, 0.25);
+            box-shadow: 0 20px 50px -20px rgba(74, 63, 53, 0.3);
             border-image: linear-gradient(to bottom right, #d4af87, #fdfaf6, #d4af87) 1;
+            transition: all 0.3s ease-in-out;
         }
 
         /* 標題字體 */
-        h1, h2 {
+        h1, h2, h3 {
             font-family: 'Noto Serif TC', serif;
             color: var(--color-text-header);
             letter-spacing: 0.05em;
+        }
+        h1 {
+            font-size: 2.75rem; /* 44px */
+            text-shadow: 1px 1px 2px rgba(74, 63, 53, 0.1);
         }
 
         .table-container {
@@ -77,9 +89,12 @@
             top: 0;
             z-index: 10;
             border-bottom: 2px solid var(--color-primary);
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
         }
         tbody tr {
-             transition: background-color 0.2s;
+             transition: background-color 0.3s ease;
         }
         tbody tr:hover {
             background-color: rgba(185, 147, 108, 0.08);
@@ -101,7 +116,7 @@
             outline: none;
             border-color: var(--color-primary);
             box-shadow: 0 0 0 3px rgba(185, 147, 108, 0.2);
-            background-color: var(--color-bg);
+            background-color: #fefcf9;
         }
 
         /* 刪除按鈕 */
@@ -125,15 +140,15 @@
 
         /* 主要操作按鈕 */
         .action-btn {
-            display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; padding: 0.75rem 1.5rem; border-radius: 9999px; transition: all 0.2s ease-in-out; box-shadow: 0 4px 15px -5px rgba(74, 63, 53, 0.15); border: 1px solid transparent;
+            display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; padding: 0.75rem 1.5rem; border-radius: 9999px; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px -5px rgba(74, 63, 53, 0.15); border: 1px solid transparent;
         }
         .action-btn:hover {
             transform: translateY(-2px) scale(1.03);
             box-shadow: 0 8px 25px -8px rgba(74, 63, 53, 0.25);
         }
         .action-btn:active {
-             transform: translateY(0px) scale(1);
-             box-shadow: 0 4px 15px -5px rgba(74, 63, 53, 0.15);
+             transform: translateY(1px) scale(0.98);
+             box-shadow: 0 2px 8px -3px rgba(74, 63, 53, 0.2);
         }
         .action-btn:disabled {
             opacity: 0.7; cursor: not-allowed; transform: translateY(0);
@@ -143,11 +158,11 @@
 
         /* Modal 樣式 */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; visibility: hidden; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modal-overlay.visible { opacity: 1; visibility: visible; }
         .modal-content {
-            background: var(--color-bg); padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; border: 1px solid var(--color-border); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); transform: scale(0.95); transition: transform 0.3s;
+            background: var(--color-bg); padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; border: 1px solid var(--color-border); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modal-overlay.visible .modal-content { transform: scale(1); }
 
@@ -174,7 +189,7 @@
 <body class="p-4 md:p-8">
 
     <div id="captureArea" class="max-w-7xl mx-auto rounded-2xl p-6 md:p-8">
-        <header class="text-center mb-8 no-screenshot">
+        <header class="text-center mb-8">
             <h1 class="text-4xl font-bold">一週勤務表</h1>
             <p class="mt-3 text-lg opacity-80">AI 智慧排版・締結善緣</p>
             <div class="w-24 h-px bg-gradient-to-r from-transparent via-[--color-primary] to-transparent mx-auto mt-4"></div>
@@ -182,26 +197,28 @@
 
         <!-- 人員管理區 -->
         <div class="mb-8 p-6 bg-gray-50/10 rounded-lg border border-[var(--color-border)]/50 no-screenshot">
-            <div id="togglePersonnelSection" class="flex justify-between items-center cursor-pointer">
-                <h2 class="text-xl font-semibold">人員名單管理</h2>
+            <h2 class="text-xl font-semibold mb-4">人員名單管理</h2>
+            
+            <!-- 新增人員區塊 (永遠顯示) -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                <input type="text" id="newName" placeholder="請輸入姓名" class="flex-grow w-full px-4 py-2 rounded-lg focus:outline-none">
+                <button id="addNameBtn" class="action-btn w-full sm:w-auto btn-add">
+                    <i data-lucide="user-plus"></i>
+                    <span>新增人員</span>
+                </button>
+            </div>
+
+            <!-- 已輸入人員名單收合區塊 -->
+            <div id="togglePersonnelSection" class="flex justify-between items-center cursor-pointer mt-6 border-t border-[var(--color-border)]/50 pt-4">
+                <h3 class="font-semibold text-gray-700">已輸入人員名單 (點此展開/收合)</h3>
                 <button class="text-gray-600 hover:text-[var(--color-text-header)] transition-transform duration-300" id="personnelToggleButton">
                     <i data-lucide="chevron-up" id="personnelToggleIcon"></i>
                 </button>
             </div>
             
             <div id="personnelManagementContent" class="collapsible-content mt-4">
-                <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                    <input type="text" id="newName" placeholder="請輸入姓名" class="flex-grow w-full px-4 py-2 rounded-lg focus:outline-none">
-                    <button id="addNameBtn" class="action-btn w-full sm:w-auto btn-add">
-                        <i data-lucide="user-plus"></i>
-                        <span>新增人員</span>
-                    </button>
-                </div>
                 <div id="personnelList" class="flex flex-wrap gap-3">
                     <!-- 人員名單 -->
-                </div>
-                <div class="mt-6 border-t pt-4 border-dashed" style="border-color: var(--color-border);">
-                     
                 </div>
             </div>
         </div>
@@ -464,10 +481,12 @@
             });
 
             screenshotBtn.addEventListener('click', async () => {
-                const captureTarget = document.getElementById('scheduleArea');
-                const buttonToHide = document.getElementById('geminiSuggestBtn');
+                const captureTarget = document.getElementById('captureArea');
+                const elementsToHide = captureTarget.querySelectorAll('.no-screenshot');
             
-                buttonToHide.style.visibility = 'hidden';
+                elementsToHide.forEach(el => el.style.visibility = 'hidden');
+                // Temporarily remove padding for screenshot if it affects layout
+                const originalPadding = captureTarget.style.padding;
                 captureTarget.style.padding = '1.5rem';
             
                 screenshotBtn.disabled = true;
@@ -502,8 +521,8 @@
                         alert('抱歉，截圖或分享功能發生錯誤。');
                     }
                 } finally {
-                    buttonToHide.style.visibility = 'visible';
-                    captureTarget.style.padding = '';
+                    elementsToHide.forEach(el => el.style.visibility = 'visible');
+                    captureTarget.style.padding = originalPadding;
             
                     screenshotBtn.disabled = false;
                     screenshotBtn.querySelector('span').textContent = '截圖分享';
