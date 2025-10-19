@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>執禮人員輪值表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        .print-hide {
+            display: block;
+        }
+        /* 列印樣式 */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-hide {
+                display: none !important;
+            }
+            .printable-area, .printable-area * {
+                visibility: visible;
+            }
+            .printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            h1, h2 {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased">
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <!-- 頁面標題 -->
+        <header class="text-center mb-8 print-hide">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-700">執禮人員輪值表</h1>
+            <p class="text-gray-500 mt-2">集中管理、智慧排班、多版本存取。</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 左側：人員管理區 -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg h-fit print-hide">
+                <div id="toggleNameList" class="flex justify-between items-center border-b pb-3 cursor-pointer">
+                    <h2 class="text-2xl font-bold">人員名單管理</h2>
+                    <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+                
+                <div id="nameManagementContent" class="hidden mt-4">
+                    <div class="mb-4">
+                        <input type="text" id="searchInput" placeholder="搜尋人員..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <input type="text" id="nameInput" placeholder="輸入姓名..." class="flex-grow w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <button id="addNameBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 whitespace-nowrap">
+                            新增
+                        </button>
+                    </div>
+                    <div id="nameList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
+                        <!-- 人員名單將會動態生成於此 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：輪值表 -->
+            <div class="lg:col-span-2 space-y-8">
+                <div class="bg-white p-6 rounded-2xl shadow-lg printable-area">
+                    <div class="flex flex-wrap justify-between items-center mb-4 border-b pb-3 gap-4">
+                        <h2 class="text-2xl font-bold">執禮人員輪值表</h2>
+                        <div class="flex space-x-2 print-hide">
+                             <button id="quickAddBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 whitespace-nowrap">
+                                + 新增
+                            </button>
+                            <button id="clearScheduleBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition duration-300 transform hover:scale-105 whitespace-nowrap">
+                                清除
+                            </button>
+                            <button id="printBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition duration-300 transform hover:scale-105 whitespace-nowrap">
+                                列印
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 多版本存取功能 -->
+                    <div class="flex flex-wrap gap-2 items-center mb-4 p-4 bg-gray-50 rounded-lg print-hide">
+                        <select id="scheduleSelector" class="flex-grow p-2 border border-gray-300 rounded-lg"></select>
+                        <input type="text" id="saveNameInput" placeholder="輸入存檔名稱..." class="p-2 border border-gray-300 rounded-lg">
+                        <button id="saveScheduleBtn" class="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600">儲存</button>
+                        <button id="deleteScheduleBtn" class="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600">刪除</button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table id="scheduleTable" class="w-full text-center border-collapse">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="p-3 font-semibold border border-gray-300 sticky left-0 bg-gray-200 z-10">職位</th>
+                                    <th class="p-3 font-semibold border border-gray-300 text-teal-600">星期一</th>
+                                    <th class="p-3 font-semibold border border-gray-300 text-indigo-600">星期二</th>
+                                    <th class="p-3 font-semibold border border-gray-300 text-purple-600">星期三</th>
+                                    <th class="p-3 font-semibold border border-gray-300 text-pink-600">星期四</th>
+                                    <th class="p-3 font-semibold border border-gray-300 text-orange-600">星期五</th>
+                                    <th class="p-3 font-semibold border border-gray-300 text-blue-600">星期六</th>
+                                    <th class="p-3 font-semibold border border-gray-300 text-red-600">星期日</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduleBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 統計儀表板 -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg print-hide">
+                    <h3 class="text-xl font-bold border-b pb-2 mb-3">勤務統計</h3>
+                    <div id="statsDashboard" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
+                        <!-- 統計資料將會動態生成於此 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自訂確認視窗 -->
+    <div id="customConfirm" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-sm mx-auto">
+            <h3 id="confirmTitle" class="text-xl font-bold mb-4">確認操作</h3>
+            <p id="confirmMessage" class="text-gray-600 mb-6"></p>
+            <div class="flex justify-end space-x-4">
+                <button id="confirmCancel" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">取消</button>
+                <button id="confirmOk" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ... DOM 元素獲取 ...
+            const nameInput = document.getElementById('nameInput');
+            const addNameBtn = document.getElementById('addNameBtn');
+            const nameList = document.getElementById('nameList');
+            const scheduleBody = document.getElementById('scheduleBody');
+            const toggleNameList = document.getElementById('toggleNameList');
+            const nameManagementContent = document.getElementById('nameManagementContent');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const quickAddBtn = document.getElementById('quickAddBtn');
+            const clearScheduleBtn = document.getElementById('clearScheduleBtn');
+            const printBtn = document.getElementById('printBtn');
+            const searchInput = document.getElementById('searchInput');
+            const statsDashboard = document.getElementById('statsDashboard');
+            const scheduleSelector = document.getElementById('scheduleSelector');
+            const saveNameInput = document.getElementById('saveNameInput');
+            const saveScheduleBtn = document.getElementById('saveScheduleBtn');
+            const deleteScheduleBtn = document.getElementById('deleteScheduleBtn');
+
+            // ... 確認視窗元素 ...
+            const customConfirm = document.getElementById('customConfirm');
+            const confirmMessage = document.getElementById('confirmMessage');
+            const confirmCancel = document.getElementById('confirmCancel');
+            const confirmOk = document.getElementById('confirmOk');
+
+            const roles = ['司儀', '上執禮', '下執禮', '下禮', '百孝經'];
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            
+            // 應用程式狀態
+            let appState = {
+                names: ['王惠', '幼英', '佳縈', '銘利', '興隆', '杜宜辰', '王美足', '冠華', '家達', '晨章', '蕙如', '家慶', '桂香', '富嬌', '喆靜', '夏梅', '方廷', '媖琯', '郁翔', '梵伍', '丞澤', '鳳瑣', '楊錦', '炳彥', '奕辰', '明軒', '語潔', '俊賢', '于萱', '仙媧', '思綺', '品萱', '冠霖', '素貞', '冠億', '昀軒', '美雲', '劉玉燕', '思頻', '俊戶', '王恩', '惠如', '俊峰', '俊緯', '昕瑋', '暫停', '王蕙', '媖姑', '亦辰', '玉燕', '長翔', '承澤', '彩支', '橙澤'],
+                schedules: { '預設排班': {} },
+                currentScheduleName: '預設排班'
+            };
+
+            // --- 確認視窗 ---
+            let confirmCallback = null;
+            const showConfirm = (message, callback) => {
+                confirmMessage.textContent = message;
+                confirmCallback = callback;
+                customConfirm.classList.remove('hidden');
+            };
+            confirmOk.addEventListener('click', () => {
+                if (confirmCallback) confirmCallback();
+                customConfirm.classList.add('hidden');
+            });
+            confirmCancel.addEventListener('click', () => customConfirm.classList.add('hidden'));
+
+            // --- 資料處理 ---
+            const loadState = () => {
+                const saved = localStorage.getItem('scheduleAppState');
+                if (saved) {
+                    appState = JSON.parse(saved);
+                }
+                if (!appState.schedules) appState.schedules = { '預設排班': {} };
+                if (!appState.currentScheduleName) appState.currentScheduleName = '預設排班';
+                sortNames();
+            };
+            const saveState = () => localStorage.setItem('scheduleAppState', JSON.stringify(appState));
+            const sortNames = () => appState.names.sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+            
+            // --- 渲染函式 ---
+            const render = () => {
+                renderNameList();
+                renderSchedule();
+                renderStats();
+                renderScheduleSelector();
+            };
+
+            const renderNameList = () => {
+                const filter = searchInput.value.toLowerCase();
+                const filteredNames = appState.names.filter(name => name.toLowerCase().includes(filter));
+                nameList.innerHTML = '';
+                filteredNames.forEach(name => {
+                    const nameElement = document.createElement('div');
+                    nameElement.className = 'flex items-center justify-between bg-gray-100 p-2 rounded-lg';
+                    nameElement.innerHTML = `<span>${name}</span><button data-name="${name}" class="delete-btn text-red-500 hover:text-red-700">&times;</button>`;
+                    nameList.appendChild(nameElement);
+                });
+            };
+
+            const renderSchedule = () => {
+                const currentSchedule = appState.schedules[appState.currentScheduleName] || {};
+                scheduleBody.innerHTML = '';
+                roles.forEach(role => {
+                    const row = document.createElement('tr');
+                    row.className = 'even:bg-gray-50';
+                    row.innerHTML = `<td class="p-2 font-medium border border-gray-300 sticky left-0 bg-white md:bg-gray-50 z-10">${role}</td>`;
+                    days.forEach(day => {
+                        const cell = document.createElement('td');
+                        cell.className = 'p-2 border border-gray-300';
+                        const select = document.createElement('select');
+                        select.className = 'w-full bg-transparent p-1 rounded-md';
+                        select.dataset.role = role;
+                        select.dataset.day = day;
+                        
+                        let options = '<option value="">--選擇--</option>';
+                        appState.names.forEach(name => {
+                            options += `<option value="${name}">${name}</option>`;
+                        });
+                        select.innerHTML = options;
+
+                        select.value = currentSchedule[`${role}-${day}`] || '';
+                        cell.appendChild(select);
+                        row.appendChild(cell);
+                    });
+                    scheduleBody.appendChild(row);
+                });
+            };
+            
+            const renderStats = () => {
+                const currentSchedule = appState.schedules[appState.currentScheduleName] || {};
+                const counts = {};
+                Object.values(currentSchedule).forEach(name => {
+                    if (name) counts[name] = (counts[name] || 0) + 1;
+                });
+                
+                statsDashboard.innerHTML = '';
+                if (Object.keys(counts).length === 0) {
+                     statsDashboard.innerHTML = '<p class="text-gray-500 col-span-full">目前無人排班</p>';
+                     return;
+                }
+                
+                Object.entries(counts).sort(([,a],[,b]) => b-a).forEach(([name, count]) => {
+                    const statEl = document.createElement('div');
+                    statEl.className = 'bg-gray-100 p-2 rounded-lg text-sm';
+                    statEl.innerHTML = `<span class="font-bold">${name}:</span> <span class="text-blue-600 font-semibold">${count} 次</span>`;
+                    statsDashboard.appendChild(statEl);
+                });
+            };
+
+            const renderScheduleSelector = () => {
+                scheduleSelector.innerHTML = '';
+                Object.keys(appState.schedules).forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    scheduleSelector.appendChild(option);
+                });
+                scheduleSelector.value = appState.currentScheduleName;
+            };
+
+            // --- 事件處理 ---
+            const handleAddName = () => {
+                const name = nameInput.value.trim();
+                if (name && !appState.names.includes(name)) {
+                    appState.names.push(name);
+                    sortNames();
+                    saveState();
+                    render();
+                }
+                nameInput.value = '';
+                nameInput.focus();
+            };
+
+            nameList.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-btn');
+                if (deleteBtn) {
+                    const nameToDelete = deleteBtn.dataset.name;
+                    showConfirm(`確定要刪除 "${nameToDelete}" 嗎？此人員的所有排班將被清除。`, () => {
+                        appState.names = appState.names.filter(n => n !== nameToDelete);
+                        Object.values(appState.schedules).forEach(schedule => {
+                            Object.keys(schedule).forEach(key => {
+                                if (schedule[key] === nameToDelete) schedule[key] = '';
+                            });
+                        });
+                        saveState();
+                        render();
+                    });
+                }
+            });
+
+            scheduleBody.addEventListener('change', (e) => {
+                if (e.target.tagName === 'SELECT') {
+                    const { role, day } = e.target.dataset;
+                    appState.schedules[appState.currentScheduleName][`${role}-${day}`] = e.target.value;
+                    saveState();
+                    renderStats();
+                }
+            });
+
+            saveScheduleBtn.addEventListener('click', () => {
+                const name = saveNameInput.value.trim();
+                if (!name) { 
+                    alert('請輸入存檔名稱！'); 
+                    return; 
+                }
+                if (appState.schedules[name]) {
+                    showConfirm(`存檔名稱 "${name}" 已存在，您要覆蓋它嗎？`, () => {
+                        appState.schedules[name] = { ...appState.schedules[appState.currentScheduleName] };
+                        appState.currentScheduleName = name;
+                        saveState();
+                        render();
+                        saveNameInput.value = '';
+                    });
+                } else {
+                    appState.schedules[name] = { ...appState.schedules[appState.currentScheduleName] };
+                    appState.currentScheduleName = name;
+                    saveState();
+                    render();
+                    saveNameInput.value = '';
+                }
+            });
+
+            scheduleSelector.addEventListener('change', (e) => {
+                appState.currentScheduleName = e.target.value;
+                saveState();
+                render();
+            });
+            
+            deleteScheduleBtn.addEventListener('click', () => {
+                const nameToDelete = scheduleSelector.value;
+                if (Object.keys(appState.schedules).length <= 1) {
+                    alert('不能刪除最後一個排班表！');
+                    return;
+                }
+                showConfirm(`確定要刪除排班表 "${nameToDelete}" 嗎？`, () => {
+                    delete appState.schedules[nameToDelete];
+                    appState.currentScheduleName = Object.keys(appState.schedules)[0];
+                    saveState();
+                    render();
+                });
+            });
+
+            clearScheduleBtn.addEventListener('click', () => {
+                 showConfirm('確定要清除當前的所有排班嗎？', () => {
+                    appState.schedules[appState.currentScheduleName] = {};
+                    saveState();
+                    render();
+                });
+            });
+
+            // 其他按鈕事件
+            searchInput.addEventListener('input', renderNameList);
+            nameInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddName());
+            addNameBtn.addEventListener('click', handleAddName);
+            toggleNameList.addEventListener('click', () => {
+                nameManagementContent.classList.toggle('hidden');
+                toggleIcon.classList.toggle('rotate-180');
+            });
+            quickAddBtn.addEventListener('click', () => {
+                if(nameManagementContent.classList.contains('hidden')){
+                    nameManagementContent.classList.remove('hidden');
+                    toggleIcon.classList.add('rotate-180');
+                }
+                nameInput.focus();
+            });
+            printBtn.addEventListener('click', () => window.print());
+
+            // --- 初始化 ---
+            loadState();
+            render();
+        });
+    </script>
+</body>
+</html>
