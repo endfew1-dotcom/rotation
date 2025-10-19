@@ -9,137 +9,166 @@
     <style>
         body {
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc; /* bg-slate-50 */
+            overflow-x: hidden;
         }
         .print-hide {
             display: block;
         }
 
-        /* 新增：修復並美化電腦版下拉選單樣式 */
-        #scheduleTable select {
-            width: 100%;
-            padding: 0.5rem; /* 8px */
-            border-radius: 0.375rem; /* rounded-md */
-            border: 1px solid #D1D5DB; /* border-gray-300 */
-            text-align: center;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: border-color 0.2s;
-            -webkit-appearance: menulist-button; /* 讓它在 Webkit 瀏覽器中看起來像按鈕 */
-            -moz-appearance: none;
-            appearance: none;
-            background-color: white; /* 確保有背景色 */
+        /* --- 華麗升級：動畫與效果 --- */
+        @keyframes aurora {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1.5); }
+            50% { transform: translate(-50%, -50%) rotate(180deg) scale(2); }
+            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.5); }
         }
 
-        #scheduleTable select:focus {
-            outline: none;
-            border-color: #3B82F6; /* blue-500 */
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        .aurora-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150vw;
+            height: 150vw;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1), transparent 40%),
+                        radial-gradient(circle at top left, rgba(13, 148, 136, 0.15), transparent 50%),
+                        radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.1), transparent 45%);
+            animation: aurora 30s linear infinite;
+            filter: blur(60px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+        }
+        .card-hover.border-blue-500:hover { box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2); }
+        .card-hover.border-teal-500:hover { box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.2); }
+        .card-hover.border-indigo-500:hover { box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2); }
+        .card-hover.border-purple-500:hover { box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.2); }
+
+        /* Custom Scrollbar */
+        #nameList::-webkit-scrollbar { width: 6px; }
+        #nameList::-webkit-scrollbar-track { background: #f1f5f9; }
+        #nameList::-webkit-scrollbar-thumb { background: #60a5fa; border-radius: 3px; }
+        #nameList::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+
+        /* Collapsible Section Transition */
+        #nameManagementContent {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.4s ease-in-out, margin-top 0.4s ease-in-out;
+        }
+        #nameManagementContent > div {
+            overflow: hidden;
+        }
+        #nameManagementContent.is-open {
+            grid-template-rows: 1fr;
+            margin-top: 1rem;
         }
         
-        #scheduleTable td {
-            height: auto; /* 讓高度自動適應 */
-            min-height: 60px; /* 設置最小高度 */
-            vertical-align: middle;
-        }
+        /* 移除舊的 select 樣式，因為將改用 Tailwind classes 直接控制 */
+        #scheduleTable td { height: auto; min-height: 60px; vertical-align: middle; }
         
-        /* 列印樣式 */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            .print-hide {
-                display: none !important;
-            }
-            .printable-area, .printable-area * {
-                visibility: visible;
-            }
-            .printable-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 0;
-                margin: 0;
-            }
-            h1, h2 {
-                text-align: center;
-            }
-            .no-print-in-table {
-                display: none;
-            }
+            body * { visibility: hidden; } .print-hide { display: none !important; } .printable-area, .printable-area * { visibility: visible; }
+            .printable-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
+            h1, h2 { text-align: center; }
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 antialiased">
-    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
-        <!-- 頁面標題 -->
-        <header class="text-center mb-8 print-hide">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-700">執禮人員輪值表</h1>
-            <p class="text-gray-500 mt-2">集中管理、智慧排班、多版本存取與歷史統計。</p>
+<body class="text-gray-700 antialiased">
+    <!-- 動態極光背景 -->
+    <div class="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden">
+        <div class="aurora-bg"></div>
+    </div>
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl relative z-10">
+        <header class="text-center mb-8 print-hide p-8 rounded-2xl bg-gradient-to-r from-blue-600 to-teal-500 shadow-lg animate-fade-in-up">
+            <h1 class="text-3xl md:text-4xl font-bold text-white">執禮人員輪值表</h1>
+            <p class="text-blue-100 mt-2">集中管理、智慧排班、多版本存取與歷史統計。</p>
         </header>
 
-        <!-- 主要操作區塊 -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <!-- 左側：人員管理區 -->
-            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg h-fit print-hide">
-                <div id="toggleNameList" class="flex justify-between items-center border-b pb-3 cursor-pointer">
-                    <h2 class="text-2xl font-bold">人員名單管理</h2>
-                    <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg h-fit print-hide border-t-4 border-blue-500 card-hover">
+                <div id="toggleNameList" class="flex justify-between items-center pb-3 cursor-pointer">
+                    <h2 class="text-2xl font-bold flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-1a6 6 0 00-5.176-5.97M15 21h6m-6-1a6 6 0 00-5.176-5.97m-3.203-8.666A4.001 4.001 0 019 6a4 4 0 014 4" />
+                        </svg>
+                        人員名單管理
+                    </h2>
+                    <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-transform duration-300 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
                 
-                <div id="nameManagementContent" class="hidden mt-4">
-                    <div class="mb-4">
+                <div id="nameManagementContent">
+                    <div class="space-y-4">
                         <input type="text" id="searchInput" placeholder="搜尋人員..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                    </div>
-                    <div class="flex items-center space-x-2 mb-4">
-                        <input type="text" id="nameInput" placeholder="輸入姓名..." class="flex-grow w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                        <button id="addNameBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 whitespace-nowrap">
-                            新增
-                        </button>
-                    </div>
-                    <div id="nameList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
-                        <!-- 人員名單將會動態生成於此 -->
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="nameInput" placeholder="輸入姓名..." class="flex-grow w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            <button id="addNameBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-110 whitespace-nowrap flex items-center gap-1 shadow-md hover:shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                                新增
+                            </button>
+                        </div>
+                        <div id="nameList" class="space-y-2 max-h-96 overflow-y-auto pr-2"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 右側：輪值表區 -->
             <div class="lg:col-span-2">
-                <div class="bg-white p-6 rounded-2xl shadow-lg printable-area">
-                    <div class="flex flex-wrap justify-between items-center mb-2 border-b pb-3 gap-4">
-                        <h2 class="text-2xl font-bold">執禮人員輪值表</h2>
+                <div class="bg-white p-6 rounded-2xl shadow-xl printable-area border-t-4 border-teal-500 card-hover">
+                    <div class="flex flex-wrap justify-between items-center mb-2 pb-3 gap-4">
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            執禮人員輪值表
+                        </h2>
                         <div class="flex flex-wrap gap-2 print-hide">
-                             <button id="quickAddBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 whitespace-nowrap text-sm sm:text-base">
-                                + 新增
+                             <button id="quickAddBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-110 whitespace-nowrap text-sm sm:text-base flex items-center gap-1 shadow-md hover:shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 14.95a1 1 0 001.414 1.414l.707-.707a1 1 0 00-1.414-1.414l-.707.707zM9 16a1 1 0 102 0v1a1 1 0 10-2 0v-1zM4.343 5.757a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM2 10a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zM14.95 14.95a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707z" /></svg>
+                                新增
                             </button>
-                            <button id="clearScheduleBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition duration-300 transform hover:scale-105 whitespace-nowrap text-sm sm:text-base">
+                            <button id="clearScheduleBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-all duration-300 transform hover:scale-110 whitespace-nowrap text-sm sm:text-base flex items-center gap-1 shadow-md hover:shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
                                 清除
                             </button>
-                            <button id="printBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition duration-300 transform hover:scale-105 whitespace-nowrap text-sm sm:text-base">
+                            <button id="printBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-300 transform hover:scale-110 whitespace-nowrap text-sm sm:text-base flex items-center gap-1 shadow-md hover:shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v3a2 2 0 002 2h6a2 2 0 002-2v-3h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" /></svg>
                                 列印
                             </button>
                         </div>
                     </div>
                      <p id="dateTitle" class="text-center font-semibold text-gray-600 my-4"></p>
                     
-                    <!-- 多版本存取功能 -->
-                    <div class="flex flex-wrap gap-2 items-center mb-4 p-4 bg-gray-50 rounded-lg print-hide">
+                    <div class="flex flex-wrap gap-2 items-center mb-4 p-4 bg-slate-50 rounded-lg print-hide">
                         <select id="scheduleSelector" class="w-full sm:w-auto flex-grow p-2 border border-gray-300 rounded-lg"></select>
                         <input type="text" id="saveNameInput" placeholder="輸入存檔名稱..." class="w-full sm:w-auto flex-grow p-2 border border-gray-300 rounded-lg">
                         <div class="flex w-full sm:w-auto gap-2">
-                            <button id="saveScheduleBtn" class="w-1/2 sm:w-auto bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600">儲存</button>
-                            <button id="deleteScheduleBtn" class="w-1/2 sm:w-auto bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600">刪除</button>
+                            <button id="saveScheduleBtn" class="w-1/2 sm:w-auto bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 flex items-center justify-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6a1 1 0 10-2 0v5.586L7.707 10.293z" /><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v3a1 1 0 11-2 0V4H7v3a1 1 0 01-2 0V4z" /></svg>
+                                儲存
+                            </button>
+                            <button id="deleteScheduleBtn" class="w-1/2 sm:w-auto bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 flex items-center justify-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 5a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M3 8a1 1 0 011-1h12a1 1 0 011 1v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8zm2 0v6h10V8H5z" clip-rule="evenodd" /></svg>
+                                刪除
+                            </button>
                         </div>
                     </div>
 
-                    <!-- 電腦版表格 -->
                     <div class="overflow-x-auto hidden md:block">
                         <table id="scheduleTable" class="w-full text-center border-collapse">
                             <thead>
-                                <tr class="bg-gray-200">
-                                    <th class="p-3 font-semibold border border-gray-300 sticky left-0 bg-gray-200 z-10">職位</th>
+                                <tr class="bg-slate-100">
+                                    <th class="p-3 font-semibold border border-gray-300 sticky left-0 bg-slate-200 z-10">職位</th>
                                     <th class="p-3 font-semibold border border-gray-300 text-teal-600">星期一</th>
                                     <th class="p-3 font-semibold border border-gray-300 text-indigo-600">星期二</th>
                                     <th class="p-3 font-semibold border border-gray-300 text-purple-600">星期三</th>
@@ -153,24 +182,18 @@
                         </table>
                     </div>
                     
-                    <!-- 手機版卡片視圖 -->
-                    <div id="mobileScheduleView" class="space-y-2 md:hidden">
-                        <!-- 手機版內容將會動態生成於此 -->
-                    </div>
+                    <div id="mobileScheduleView" class="space-y-2 md:hidden"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 統計區塊 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 print-hide">
-            <!-- 本週統計儀表板 -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-indigo-500 card-hover">
                 <h3 class="text-xl font-bold border-b pb-2 mb-3">本週勤務統計</h3>
                 <div id="statsDashboard" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto"></div>
             </div>
 
-            <!-- 歷史統計儀表板 -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-purple-500 card-hover">
                 <h3 class="text-xl font-bold border-b pb-2 mb-3">歷史勤務統計</h3>
                 <div class="flex flex-wrap gap-2 items-center mb-4">
                     <select id="yearSelector" class="p-2 border border-gray-300 rounded-lg flex-grow sm:flex-grow-0"></select>
@@ -184,9 +207,8 @@
         </div>
     </div>
 
-    <!-- 自訂確認視窗 -->
-    <div id="customConfirm" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-sm mx-auto">
+    <div id="customConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-sm mx-auto" style="animation: fadeIn 0.3s ease-out;">
             <h3 id="confirmTitle" class="text-xl font-bold mb-4">確認操作</h3>
             <p id="confirmMessage" class="text-gray-600 mb-6"></p>
             <div class="flex justify-end space-x-4">
@@ -198,7 +220,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM 元素獲取
             const nameInput = document.getElementById('nameInput');
             const addNameBtn = document.getElementById('addNameBtn');
             const nameList = document.getElementById('nameList');
@@ -222,8 +243,6 @@
             const historicalStatsDashboard = document.getElementById('historicalStatsDashboard');
             const mobileScheduleView = document.getElementById('mobileScheduleView');
             const scheduleContainer = document.querySelector('.printable-area');
-            
-            // 確認視窗元素
             const customConfirm = document.getElementById('customConfirm');
             const confirmMessage = document.getElementById('confirmMessage');
             const confirmCancel = document.getElementById('confirmCancel');
@@ -238,15 +257,13 @@
                 currentScheduleName: '預設排班'
             };
 
-            // --- Helper 函式 ---
             const getWeekOfMonth = (date) => {
                 const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
                 const dayOfMonth = date.getDate();
-                const dayOfWeek = startOfMonth.getDay() === 0 ? 6 : startOfMonth.getDay() - 1; // Monday as 0
+                const dayOfWeek = startOfMonth.getDay() === 0 ? 6 : startOfMonth.getDay() - 1;
                 return Math.ceil((dayOfMonth + dayOfWeek) / 7);
             };
 
-            // --- 確認視窗 ---
             let confirmCallback = null;
             const showConfirm = (message, callback) => {
                 confirmMessage.textContent = message;
@@ -256,7 +273,6 @@
             confirmOk.addEventListener('click', () => { if (confirmCallback) confirmCallback(); customConfirm.classList.add('hidden'); });
             confirmCancel.addEventListener('click', () => customConfirm.classList.add('hidden'));
 
-            // --- 資料處理 ---
             const loadState = () => {
                 const saved = localStorage.getItem('scheduleAppState');
                 if (saved) appState = JSON.parse(saved);
@@ -267,7 +283,6 @@
             const saveState = () => localStorage.setItem('scheduleAppState', JSON.stringify(appState));
             const sortNames = () => appState.names.sort((a, b) => a.localeCompare(b, 'zh-Hant'));
             
-            // --- 渲染函式 ---
             const render = () => {
                 renderNameList();
                 renderSchedule();
@@ -282,7 +297,7 @@
                 nameList.innerHTML = '';
                 filteredNames.forEach(name => {
                     const nameElement = document.createElement('div');
-                    nameElement.className = 'flex items-center justify-between bg-gray-100 p-2 rounded-lg';
+                    nameElement.className = 'flex items-center justify-between bg-slate-100 p-2 rounded-lg';
                     nameElement.innerHTML = `<span>${name}</span><button data-name="${name}" class="delete-btn text-red-500 hover:text-red-700 focus:outline-none"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button>`;
                     nameList.appendChild(nameElement);
                 });
@@ -294,38 +309,52 @@
                 mobileScheduleView.innerHTML = '';
                 const optionsHTML = '<option value="">--選擇--</option>' + appState.names.map(name => `<option value="${name}">${name}</option>`).join('');
 
-                // 渲染電腦版表格
+                // 渲染電腦版表格 - 更新
                 roles.forEach(role => {
                     const row = document.createElement('tr');
-                    row.className = 'even:bg-gray-50';
-                    let rowHTML = `<td class="p-2 font-medium border border-gray-300 sticky left-0 bg-white md:bg-gray-50 z-10">${role}</td>`;
+                    row.className = 'even:bg-slate-50';
+                    let rowHTML = `<td class="p-2 font-medium border border-gray-300 sticky left-0 bg-white md:bg-slate-100 z-10">${role}</td>`;
                     days.forEach(day => {
                         const selectedValue = currentSchedule[`${role}-${day}`] || '';
-                        // 更新：移除下拉選單的 class，讓 <style> 中的樣式生效
-                        rowHTML += `<td class="p-2 border border-gray-300"><select data-role="${role}" data-day="${day}">${optionsHTML.replace(\`value="${selectedValue}"\`, \`value="${selectedValue}" selected\`)}</select></td>`;
+                        rowHTML += `
+                            <td class="p-2 border border-gray-300">
+                                <div class="relative">
+                                    <select data-role="${role}" data-day="${day}" class="w-full appearance-none bg-white p-2 pl-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                        ${optionsHTML.replace(\`value="\${selectedValue}"\`, \`value="\${selectedValue}" selected\`)}
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.646 7.646a.5.5 0 0 1 .708 0L10 11.293l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/></svg>
+                                    </div>
+                                </div>
+                            </td>`;
                     });
                     row.innerHTML = rowHTML;
                     scheduleBody.appendChild(row);
                 });
                 
-                // 渲染手機版卡片
+                // 渲染手機版卡片 - 更新
                 const dayNames = { mon: '星期一', tue: '星期二', wed: '星期三', thu: '星期四', fri: '星期五', sat: '星期六', sun: '星期日' };
                 const dayColors = { mon: 'teal', tue: 'indigo', wed: 'purple', thu: 'pink', fri: 'orange', sat: 'blue', sun: 'red' };
                 days.forEach(day => {
                     const dayCard = document.createElement('div');
-                    dayCard.className = `bg-gray-50 rounded-lg p-3 border-l-4 border-${dayColors[day]}-500`;
-                    let cardHeader = `<h3 class="text-lg font-bold text-${dayColors[day]}-600 mb-2">${dayNames[day]}</h3>`;
+                    dayCard.className = \`bg白色ㄧ rounded-lg p-3 border-l-4 border-\${dayColors[day]}-500 shadow\`.replace("白色ㄧ", "white");
+                    let cardHeader = \`<h3 class="text-lg font-bold text-\${dayColors[day]}-600 mb-2">\${dayNames[day]}</h3>\`;
                     let cardBody = '<div class="space-y-2">';
                     roles.forEach(role => {
-                        const selectedValue = currentSchedule[`${role}-${day}`] || '';
-                        cardBody += `
+                        const selectedValue = currentSchedule[\`\${role}-\${day}\`] || '';
+                        cardBody += \`
                             <div>
-                                <label class="block text-gray-500 text-xs font-medium">${role}</label>
-                                <select data-role="${role}" data-day="${day}" class="w-full bg-white p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                                    ${optionsHTML.replace(\`value="${selectedValue}"\`, \`value="${selectedValue}" selected\`)}
-                                </select>
+                                <label class="block text-gray-500 text-xs font-medium">\${role}</label>
+                                <div class="relative">
+                                    <select data-role="\${role}" data-day="\${day}" class="w-full appearance-none bg-white p-1.5 pl-3 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
+                                        \${optionsHTML.replace(\`value="\${selectedValue}"\`, \`value="\${selectedValue}" selected\`)}
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.646 7.646a.5.5 0 0 1 .708 0L10 11.293l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/></svg>
+                                    </div>
+                                </div>
                             </div>
-                        `;
+                        \`;
                     });
                     cardBody += '</div>';
                     dayCard.innerHTML = cardHeader + cardBody;
@@ -346,7 +375,7 @@
                 }
                 Object.entries(counts).sort(([,a],[,b]) => b-a).forEach(([name, count]) => {
                     const statEl = document.createElement('div');
-                    statEl.className = 'bg-gray-100 p-2 rounded-lg text-sm';
+                    statEl.className = 'bg-slate-100 p-2 rounded-lg text-sm';
                     statEl.innerHTML = `<span class="font-bold">${name}:</span> <span class="text-blue-600 font-semibold">${count} 次</span>`;
                     statsDashboard.appendChild(statEl);
                 });
@@ -373,7 +402,6 @@
                 saveNameInput.placeholder = title;
             };
 
-            // --- 事件處理 ---
             const handleAddName = () => {
                 const name = nameInput.value.trim();
                 if (name && !appState.names.includes(name)) {
@@ -390,7 +418,7 @@
                 const deleteBtn = e.target.closest('.delete-btn');
                 if (deleteBtn) {
                     const nameToDelete = deleteBtn.dataset.name;
-                    showConfirm(\`確定要刪除 "\${nameToDelete}" 嗎？此人員的所有排班將被清除。\`, () => {
+                    showConfirm(`確定要刪除 "${nameToDelete}" 嗎？此人員的所有排班將被清除。`, () => {
                         appState.names = appState.names.filter(n => n !== nameToDelete);
                         Object.values(appState.schedules).forEach(schedule => {
                             Object.keys(schedule).forEach(key => {
@@ -406,9 +434,9 @@
             scheduleContainer.addEventListener('change', (e) => {
                 if (e.target.tagName === 'SELECT' && e.target.dataset.role) {
                     const { role, day } = e.target.dataset;
-                    appState.schedules[appState.currentScheduleName][\`\${role}-\${day}\`] = e.target.value;
+                    appState.schedules[appState.currentScheduleName][`${role}-${day}`] = e.target.value;
                     saveState();
-                    render(); // 重繪整個排班表以同步兩邊視圖
+                    render();
                 }
             });
 
@@ -417,7 +445,7 @@
                 if (!name) name = saveNameInput.placeholder;
                 
                 if (appState.schedules[name] && name !== appState.currentScheduleName) {
-                    showConfirm(\`存檔名稱 "\${name}" 已存在，您要覆蓋它嗎？\`, () => {
+                    showConfirm(`存檔名稱 "${name}" 已存在，您要覆蓋它嗎？`, () => {
                         appState.schedules[name] = { ...(appState.schedules[appState.currentScheduleName] || {}) };
                         appState.currentScheduleName = name;
                         saveState();
@@ -449,7 +477,7 @@
                 if (Object.keys(appState.schedules).length <= 1) {
                     alert('不能刪除最後一個排班表！'); return;
                 }
-                showConfirm(\`確定要刪除排班表 "\${nameToDelete}" 嗎？\`, () => {
+                showConfirm(`確定要刪除排班表 "${nameToDelete}" 嗎？`, () => {
                     delete appState.schedules[nameToDelete];
                     appState.currentScheduleName = Object.keys(appState.schedules)[0];
                     saveState();
@@ -471,7 +499,7 @@
                 const monthlyCounts = {};
 
                 Object.entries(appState.schedules).forEach(([name, scheduleData]) => {
-                    if (name.includes(year) && name.includes(\`\${month}月\`)) {
+                    if (name.includes(year) && name.includes(`${month}月`)) {
                         Object.values(scheduleData).forEach(person => {
                             if (person) monthlyCounts[person] = (monthlyCounts[person] || 0) + 1;
                         });
@@ -480,35 +508,35 @@
 
                 historicalStatsDashboard.innerHTML = '';
                 if (Object.keys(monthlyCounts).length === 0) {
-                     historicalStatsDashboard.innerHTML = \`<p class="text-gray-500 col-span-full">在 \${year} 年 \${month} 月找不到符合的排班資料。</p>\`;
+                     historicalStatsDashboard.innerHTML = `<p class="text-gray-500 col-span-full">在 ${year} 年 ${month} 月找不到符合的排班資料。</p>`;
                      return;
                 }
                 Object.entries(monthlyCounts).sort(([,a],[,b]) => b-a).forEach(([name, count]) => {
                     const statEl = document.createElement('div');
-                    statEl.className = 'bg-gray-100 p-2 rounded-lg text-sm';
-                    statEl.innerHTML = \`<span class="font-bold">\${name}:</span> <span class="text-teal-600 font-semibold">\${count} 次</span>\`;
+                    statEl.className = 'bg-slate-100 p-2 rounded-lg text-sm';
+                    statEl.innerHTML = `<span class="font-bold">${name}:</span> <span class="text-teal-600 font-semibold">${count} 次</span>`;
                     historicalStatsDashboard.appendChild(statEl);
                 });
             });
 
-            // 其他按鈕事件
             searchInput.addEventListener('input', renderNameList);
             nameInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddName());
             addNameBtn.addEventListener('click', handleAddName);
+            
             toggleNameList.addEventListener('click', () => {
-                nameManagementContent.classList.toggle('hidden');
+                nameManagementContent.classList.toggle('is-open');
                 toggleIcon.classList.toggle('rotate-180');
             });
+            
             quickAddBtn.addEventListener('click', () => {
-                if(nameManagementContent.classList.contains('hidden')){
-                    nameManagementContent.classList.remove('hidden');
+                if(!nameManagementContent.classList.contains('is-open')){
+                    nameManagementContent.classList.add('is-open');
                     toggleIcon.classList.add('rotate-180');
                 }
                 nameInput.focus();
             });
             printBtn.addEventListener('click', () => window.print());
 
-            // --- 歷史統計月份動態更新 ---
             const populateMonthSelector = (selectedYear) => {
                 const startYear = 2025;
                 const startMonth = (parseInt(selectedYear, 10) === startYear) ? 10 : 1; 
@@ -524,7 +552,7 @@
                     monthSelector.appendChild(option);
                 }
 
-                if (monthSelector.querySelector(\`option[value="\${currentMonthValue}"]\`)) {
+                if (monthSelector.querySelector(`option[value="${currentMonthValue}"]`)) {
                     monthSelector.value = currentMonthValue;
                 } else {
                     monthSelector.value = startMonth;
@@ -533,14 +561,10 @@
             
             yearSelector.addEventListener('change', (e) => populateMonthSelector(e.target.value));
 
-
-            // --- 初始化 ---
             const init = () => {
                 loadState();
-                
                 const startYear = 2025;
                 const endYear = new Date().getFullYear() + 5; 
-                
                 yearSelector.innerHTML = '';
                 for (let i = endYear; i >= startYear; i--) {
                     const option = document.createElement('option');
@@ -548,16 +572,13 @@
                     option.textContent = `${i}年`;
                     yearSelector.appendChild(option);
                 }
-                
                 const currentYear = new Date().getFullYear();
                 yearSelector.value = Math.max(currentYear, startYear);
                 populateMonthSelector(yearSelector.value); 
-                
                 const currentMonth = new Date().getMonth() + 1;
-                if (monthSelector.querySelector(\`option[value="\${currentMonth}"]\`)) {
+                if (monthSelector.querySelector(`option[value="${currentMonth}"]`)) {
                     monthSelector.value = currentMonth;
                 }
-                
                 render();
             };
 
