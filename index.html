@@ -604,8 +604,8 @@
                         let bodyRowHtml = `<tr><td class="position-header">${escapeHTML(position)}</td>`;
                         selectedDays.forEach(day => {
                             const select = document.getElementById(`cell-${position}-${day}`);
-                            const person = select.value || '未安排';
-                            bodyRowHtml += `<td><span class="person">${escapeHTML(person)}</span></td>`;
+                            const person = select ? select.value : '未安排';
+                            bodyRowHtml += `<td><span class="person">${escapeHTML(person || '未安排')}</span></td>`;
                         });
                         bodyRowHtml += '</tr>';
                         tbody.innerHTML += bodyRowHtml;
@@ -617,19 +617,21 @@
                 } else { 
                     contentArea.className = 'vertical-view';
                     selectedDays.forEach(day => {
-                        const dayIndex = days.indexOf(day);
-                        if (verticalView.children[dayIndex]) {
-                            const originalCard = verticalView.children[dayIndex].cloneNode(true);
-                            originalCard.querySelectorAll('select').forEach(sel => {
-                                const parent = sel.parentElement;
-                                const span = document.createElement('span');
-                                span.className = 'person';
-                                span.textContent = sel.value || '未安排';
-                                parent.appendChild(span);
-                                sel.remove();
-                            });
-                            contentArea.appendChild(originalCard);
-                        }
+                        const dayCard = document.createElement('div');
+                        dayCard.className = 'day-card';
+                        let cardContent = `<h3>星期${day}</h3>`;
+                        positions.forEach(position => {
+                             const select = document.getElementById(`cell-${position}-${day}`);
+                             const person = select ? select.value : '未安排';
+                             cardContent += `
+                                <div class="assignment-row">
+                                    <span class="position">${escapeHTML(position)}</span>
+                                    <span class="person">${escapeHTML(person || '未安排')}</span>
+                                </div>
+                            `;
+                        });
+                        dayCard.innerHTML = cardContent;
+                        contentArea.appendChild(dayCard);
                     });
                 }
 
