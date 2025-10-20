@@ -52,16 +52,6 @@
             transition: all 0.3s ease-in-out;
         }
 
-        .header-logo {
-            position: absolute;
-            top: 1rem;
-            right: 1.5rem;
-            width: 80px;
-            height: auto;
-            opacity: 0.9;
-            animation: float-glow 6s ease-in-out infinite;
-        }
-
         /* 標題字體 */
         h1, h2, h3 {
             font-family: 'Noto Serif TC', serif;
@@ -109,18 +99,24 @@
         }
 
         /* 刪除按鈕 */
-        .delete-btn {
+        .delete-btn, .delete-position-btn {
             background-color: #ffebee; color: #c62828; width: 1.25rem; height: 1.25rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px; font-size: 0.875rem; font-weight: bold; cursor: pointer; transition: all 0.2s;
         }
-        .delete-btn:hover { background-color: var(--color-accent-red); color: white; transform: scale(1.1); }
+        .delete-btn:hover, .delete-position-btn:hover { background-color: var(--color-accent-red); color: white; transform: scale(1.1); }
         
         /* 職位標題 */
         .position-header {
             writing-mode: vertical-rl; text-orientation: mixed;
             background-color: #f7f5f2 !important;
-            font-weight: 700; padding: 0.5rem;
+            font-weight: 700; padding: 1rem 0.5rem;
             color: var(--color-header-text);
             font-family: 'Noto Serif TC', serif;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+         .position-header:hover {
+            background-color: #edebe9 !important;
         }
 
         /* 主要操作按鈕 */
@@ -149,6 +145,10 @@
             transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modal-overlay.visible .modal-content { transform: scale(1); }
+        .prose { line-height: 1.7; }
+        .prose p { margin-bottom: 1rem; }
+        .prose ul { list-style-type: disc; padding-left: 1.5rem; }
+        .prose li { margin-bottom: 0.5rem; }
 
         /* 收合區塊 */
         .collapsible-content { max-height: 1000px; overflow: hidden; transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out, opacity 0.5s; opacity: 1; }
@@ -156,7 +156,7 @@
         
         /* 按鈕顏色 */
         .btn-add { background-color: var(--color-header-text); color: white; }
-        .btn-ai-suggest, .btn-ai-reminder { background-color: var(--color-accent-blue); color: white; }
+        .btn-ai-suggest { background-color: var(--color-accent-blue); color: white; }
         .btn-screenshot { background-color: var(--color-accent-green); color: white; }
         .btn-clear { background-color: var(--color-accent-red); color: white; }
         
@@ -167,6 +167,13 @@
             color: #3f51b5;
             font-size: 1.1rem;
             font-weight: 700;
+        }
+
+        /* For screenshot text */
+        .person {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-name-text);
         }
         
         /* 直立式檢視 */
@@ -191,7 +198,6 @@
 <body class="p-4 md:p-8">
 
     <div id="captureArea" class="max-w-7xl mx-auto rounded-2xl p-6 md:p-8">
-        <img src="https://raw.githubusercontent.com/endfew1-dotcom/rotation/main/a6477c63-c04c-4cc9-b26f-27476b7255a7.png" alt="logo" class="header-logo no-screenshot" />
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold">一週勤務表</h1>
             <p class="mt-3 text-lg opacity-80">締結善緣</p>
@@ -223,11 +229,11 @@
         </div>
         
         <div id="scheduleArea">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h2 class="text-2xl font-bold">勤務分配表</h2>
                 <button id="geminiSuggestBtn" class="action-btn btn-ai-suggest no-screenshot">
                     <i data-lucide="sparkles"></i>
-                    <span>✨ AI 智慧排班建議</span>
+                    <span>✨ 自動隨緣排班</span>
                 </button>
             </div>
             
@@ -258,10 +264,10 @@
                 <i data-lucide="camera"></i>
                 <span>截圖分享</span>
              </button>
-             <button id="geminiReminderBtn" class="action-btn btn-ai-reminder">
-                <i data-lucide="sparkles"></i>
-                <span>✨ 產生提醒訊息</span>
-            </button>
+             <button id="addPositionBtn" class="action-btn btn-add">
+                <i data-lucide="plus-circle"></i>
+                <span>新增勤務列</span>
+             </button>
              <button id="clearScheduleBtn" class="action-btn btn-clear">
                 <i data-lucide="trash-2"></i>
                 <span>清空排班</span>
@@ -272,25 +278,6 @@
     <button id="viewToggleBtn" title="切換檢視模式" class="action-btn btn-add no-screenshot">
         <i data-lucide="list"></i>
     </button>
-
-    <!-- AI 提醒訊息 Modal --><div id="reminderModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold">AI 產生的提醒訊息</h2>
-                <button id="closeModalBtn" class="text-gray-400 hover:text-[var(--color-header-text)]">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <p class="opacity-80 mb-4">您可以直接複製以下訊息，並傳送給團隊成員。</p>
-            <textarea id="reminderText" rows="10" class="w-full p-3 border rounded-lg bg-gray-50/10 focus:outline-none" readonly></textarea>
-            <div class="mt-6 text-right">
-                <button id="copyReminderBtn" class="action-btn btn-add">
-                    <i data-lucide="copy"></i>
-                    <span>複製訊息</span>
-                </button>
-            </div>
-        </div>
-    </div>
     
     <!-- Screenshot Preview Modal --><div id="screenshotModal" class="modal-overlay">
         <div class="modal-content">
@@ -333,21 +320,21 @@
         </div>
     </div>
 
-    <!-- Add New Person Modal --><div id="newPersonModal" class="modal-overlay">
+    <!-- Add New Person/Position Modal --><div id="newEntryModal" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold">新增人員</h2>
-                <button id="closeNewPersonModalBtn" class="text-gray-400 hover:text-[var(--color-header-text)]">
+                <h2 id="newEntryModalTitle" class="text-2xl font-bold"></h2>
+                <button id="closeNewEntryModalBtn" class="text-gray-400 hover:text-[var(--color-header-text)]">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
-            <p class="opacity-80 mb-4">請輸入要新增的姓名，此姓名將會被加入人員總名單中。</p>
-            <input type="text" id="newPersonNameInput" placeholder="請在此輸入姓名" class="w-full px-4 py-2 rounded-lg focus:outline-none">
+            <p id="newEntryModalPrompt" class="opacity-80 mb-4"></p>
+            <input type="text" id="newEntryNameInput" placeholder="" class="w-full px-4 py-2 rounded-lg focus:outline-none">
             <div class="mt-6 text-right space-x-2">
-                 <button id="cancelNewPersonBtn" class="action-btn bg-gray-200 text-gray-700 hover:bg-gray-300">
+                 <button id="cancelNewEntryBtn" class="action-btn bg-gray-200 text-gray-700 hover:bg-gray-300">
                     <span>取消</span>
                 </button>
-                <button id="saveNewPersonBtn" class="action-btn btn-add">
+                <button id="saveNewEntryBtn" class="action-btn btn-add">
                     <i data-lucide="save"></i>
                     <span>儲存</span>
                 </button>
@@ -371,11 +358,7 @@
             const clearScheduleBtn = document.getElementById('clearScheduleBtn');
             const screenshotBtn = document.getElementById('screenshotBtn');
             const geminiSuggestBtn = document.getElementById('geminiSuggestBtn');
-            const geminiReminderBtn = document.getElementById('geminiReminderBtn');
-            const reminderModal = document.getElementById('reminderModal');
-            const closeModalBtn = document.getElementById('closeModalBtn');
-            const reminderText = document.getElementById('reminderText');
-            const copyReminderBtn = document.getElementById('copyReminderBtn');
+            const addPositionBtn = document.getElementById('addPositionBtn');
             const togglePersonnelSection = document.getElementById('togglePersonnelSection');
             const personnelManagementContent = document.getElementById('personnelManagementContent');
             const personnelToggleButton = document.getElementById('personnelToggleButton');
@@ -390,11 +373,14 @@
             const closeDaySelectionModalBtn = document.getElementById('closeDaySelectionModalBtn');
             const daySelectionCheckboxes = document.getElementById('daySelectionCheckboxes');
             const startScreenshotBtn = document.getElementById('startScreenshotBtn');
-            const newPersonModal = document.getElementById('newPersonModal');
-            const closeNewPersonModalBtn = document.getElementById('closeNewPersonModalBtn');
-            const newPersonNameInput = document.getElementById('newPersonNameInput');
-            const cancelNewPersonBtn = document.getElementById('cancelNewPersonBtn');
-            const saveNewPersonBtn = document.getElementById('saveNewPersonBtn');
+            const newEntryModal = document.getElementById('newEntryModal');
+            const closeNewEntryModalBtn = document.getElementById('closeNewEntryModalBtn');
+            const newEntryModalTitle = document.getElementById('newEntryModalTitle');
+            const newEntryModalPrompt = document.getElementById('newEntryModalPrompt');
+            const newEntryNameInput = document.getElementById('newEntryNameInput');
+            const cancelNewEntryBtn = document.getElementById('cancelNewEntryBtn');
+            const saveNewEntryBtn = document.getElementById('saveNewEntryBtn');
+            const eventContextInput = document.getElementById('eventContextInput');
 
 
             // 應用程式狀態
@@ -407,10 +393,11 @@
                 '玉恩', '惠如', '俊峰', '俊鋒', '昕燁', '暫停', '玉蕙', '婇娮', 
                 '亦辰', '玉燕', '郁翔', '承澤', '彩炎', '橙澤'
             ];
-            const positions = ['司儀 (開班)', '司儀 (閉班)', '上執禮', '下執禮', '下禮', '百孝經'];
+            let positions = ['司儀 (開班)', '司儀 (閉班)', '上執禮', '下執禮', '下禮', '百孝經'];
             const days = ['一', '二', '三', '四', '五', '六', '日'];
             let currentView = 'table'; // 'table' or 'vertical'
             let activeSelectElement = null;
+            let currentModalMode = ''; // 'person' or 'position'
             
             // --- 收合功能 ---
             togglePersonnelSection.addEventListener('click', () => {
@@ -480,7 +467,7 @@
 
 
             // --- Gemini API 功能 ---
-            async function callGeminiAPI(payload, isJson = false) {
+            async function callGeminiAPI(payload) {
                  if (!apiKey) {
                     alert("請先在程式碼中設定您的 Google Gemini API 金鑰！");
                     return null;
@@ -534,54 +521,8 @@
                     lucide.createIcons();
                 }, 50); 
             });
-
-            geminiReminderBtn.addEventListener('click', async () => {
-                let scheduleSummary = "本週勤務分配如下：\n\n";
-                let hasAssignments = false;
-                positions.forEach(pos => {
-                    let positionAssignments = [];
-                    days.forEach(day => {
-                        const select = document.getElementById(`cell-${pos}-${day}`);
-                        if (select && select.value) {
-                             positionAssignments.push(`星期${day}: ${select.value}`);
-                             hasAssignments = true;
-                        }
-                    });
-                    if (positionAssignments.length > 0) {
-                        scheduleSummary += `【${pos}】\n- ${positionAssignments.join('\n- ')}\n\n`;
-                    }
-                });
-
-                if (!hasAssignments) {
-                    alert("勤務表是空的，請先排班再產生提醒訊息。");
-                    return;
-                }
-                
-                const originalContent = geminiReminderBtn.innerHTML;
-
-                geminiReminderBtn.disabled = true;
-                geminiReminderBtn.innerHTML = `<i data-lucide="loader-2" class="loading-spinner"></i><span>AI 生成中...</span>`;
-                lucide.createIcons();
-
-                const prompt = `你是一位友善的團隊助理。請根據以下的勤務分配摘要，撰寫一段語氣溫暖、格式清晰的提醒訊息，適合在團隊的即時通訊軟體中發布。訊息開頭可以親切地問候大家，結尾可以加上鼓勵的話語。勤務摘要:${scheduleSummary}`;
-                
-                const payload = { contents: [{ parts: [{ text: prompt }] }] };
-                const resultText = await callGeminiAPI(payload);
-
-                if (resultText) {
-                    reminderText.value = resultText;
-                    reminderModal.classList.add('visible');
-                }
-                
-                geminiReminderBtn.disabled = false;
-                geminiReminderBtn.innerHTML = originalContent;
-                lucide.createIcons();
-            });
             
             // --- Modal 關閉事件 ---
-            closeModalBtn.addEventListener('click', () => reminderModal.classList.remove('visible'));
-            reminderModal.addEventListener('click', (e) => { if (e.target === reminderModal) reminderModal.classList.remove('visible'); });
-            
             closeScreenshotModalBtn.addEventListener('click', () => screenshotModal.classList.remove('visible'));
             screenshotModal.addEventListener('click', (e) => { 
                 if (e.target === screenshotModal) screenshotModal.classList.remove('visible'); 
@@ -683,9 +624,6 @@
                                 const parent = sel.parentElement;
                                 const span = document.createElement('span');
                                 span.className = 'person';
-                                span.style.fontSize = '1.125rem';
-                                span.style.fontWeight = '700';
-                                span.style.color = 'var(--color-name-text)';
                                 span.textContent = sel.value || '未安排';
                                 parent.appendChild(span);
                                 sel.remove();
@@ -752,7 +690,18 @@
                 scheduleBody.innerHTML = '';
                 positions.forEach(position => {
                     const row = document.createElement('tr');
-                    row.innerHTML = `<td class="position-header">${escapeHTML(position)}</td>`;
+                    
+                    const positionHeaderCell = document.createElement('td');
+                    positionHeaderCell.className = 'position-header relative group';
+                    positionHeaderCell.dataset.position = escapeHTML(position);
+                    positionHeaderCell.innerHTML = `
+                        <span>${escapeHTML(position)}</span>
+                        <button class="delete-position-btn absolute left-1/2 -translate-x-1/2 top-1 opacity-0 group-hover:opacity-100 p-1" title="刪除此職位">
+                            <i data-lucide="trash-2" class="w-4 h-4 pointer-events-none"></i>
+                        </button>
+                    `;
+                    row.appendChild(positionHeaderCell);
+
                     days.forEach(day => {
                         const cell = document.createElement('td');
                         const select = document.createElement('select');
@@ -762,6 +711,7 @@
                     });
                     scheduleBody.appendChild(row);
                 });
+                lucide.createIcons();
             }
             function updateAllDropdowns() {
                 const optionsHtml = getOptionsHtml();
@@ -776,6 +726,7 @@
             }
             function saveState() {
                 localStorage.setItem('dutyRosterPersonnel', JSON.stringify([...new Set(personnel)]));
+                localStorage.setItem('dutyRosterPositions', JSON.stringify(positions));
                 const scheduleData = {};
                 document.querySelectorAll('#scheduleBody select').forEach(select => { if (select.value) { scheduleData[select.id] = select.value; } });
                 localStorage.setItem('dutyRosterSchedule', JSON.stringify(scheduleData));
@@ -785,6 +736,10 @@
                 if (savedPersonnel) { 
                     const loadedPersonnel = JSON.parse(savedPersonnel);
                     personnel = [...new Set([...personnel, ...loadedPersonnel])];
+                }
+                const savedPositions = localStorage.getItem('dutyRosterPositions');
+                if(savedPositions) {
+                    positions = JSON.parse(savedPositions);
                 }
                 
                 const isHidden = localStorage.getItem('personnelSectionHidden') === 'true';
@@ -810,26 +765,51 @@
 
             }
 
-            function escapeHTML(str) { return str.replace(/[&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#`39;`'})[match]); }
+            function escapeHTML(str) { return str.replace(/[&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[match]); }
             
-            function handleAddNewPerson(selectElement) {
+            function openNewEntryModal(mode, selectElement = null) {
+                currentModalMode = mode;
                 activeSelectElement = selectElement;
-                newPersonModal.classList.add('visible');
-                newPersonNameInput.focus();
-            }
-
-            function closeNewPersonModal(resetValue = true) {
-                if (resetValue && activeSelectElement) {
-                    activeSelectElement.value = '';
+                if (mode === 'person') {
+                    newEntryModalTitle.textContent = '新增人員';
+                    newEntryModalPrompt.textContent = '請輸入要新增的姓名，此姓名將會被加入人員總名單中。';
+                    newEntryNameInput.placeholder = '請在此輸入姓名';
+                } else { // position
+                    newEntryModalTitle.textContent = '新增勤務列';
+                    newEntryModalPrompt.textContent = '請輸入要新增的職位名稱 (例如：攝影、接待)。';
+                    newEntryNameInput.placeholder = '請在此輸入職位名稱';
                 }
-                newPersonModal.classList.remove('visible');
-                newPersonNameInput.value = '';
-                activeSelectElement = null;
+                newEntryModal.classList.add('visible');
+                newEntryNameInput.focus();
             }
 
-            saveNewPersonBtn.addEventListener('click', () => {
-                const newName = newPersonNameInput.value.trim();
-                if (newName) {
+            function closeNewEntryModal(resetValue = true) {
+                if (resetValue && activeSelectElement) {
+                    const scheduleData = JSON.parse(localStorage.getItem('dutyRosterSchedule') || '{}');
+                    let prevValue = '';
+                    if (activeSelectElement.id) {
+                         prevValue = scheduleData[activeSelectElement.id] || '';
+                    } else {
+                        const {day, position} = activeSelectElement.dataset;
+                        const tableSelectId = `cell-${position}-${day}`;
+                        prevValue = scheduleData[tableSelectId] || '';
+                    }
+                    activeSelectElement.value = prevValue;
+                }
+                newEntryModal.classList.remove('visible');
+                newEntryNameInput.value = '';
+                activeSelectElement = null;
+                currentModalMode = '';
+            }
+
+            saveNewEntryBtn.addEventListener('click', () => {
+                const newName = newEntryNameInput.value.trim();
+                if(!newName) {
+                    alert('名稱不能為空！');
+                    return;
+                }
+
+                if(currentModalMode === 'person') {
                     if (!personnel.includes(newName)) {
                         personnel.push(newName);
                         renderPersonnelList();
@@ -839,19 +819,28 @@
                         activeSelectElement.value = newName;
                         activeSelectElement.dispatchEvent(new Event('change', { bubbles: true }));
                     }
-                    closeNewPersonModal(false);
-                } else {
-                    alert('姓名不能為空！');
+                } else if (currentModalMode === 'position') {
+                    if (!positions.includes(newName)) {
+                        positions.push(newName);
+                        saveState();
+                        renderSchedule();
+                        updateAllDropdowns();
+                        renderVerticalView();
+                    } else {
+                        alert('此職位已存在！');
+                    }
                 }
-            });
-            newPersonNameInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') saveNewPersonBtn.click();
+                closeNewEntryModal(false);
             });
 
-            cancelNewPersonBtn.addEventListener('click', () => closeNewPersonModal());
-            closeNewPersonModalBtn.addEventListener('click', () => closeNewPersonModal());
-            newPersonModal.addEventListener('click', (e) => {
-                if (e.target === newPersonModal) closeNewPersonModal();
+            newEntryNameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') saveNewEntryBtn.click();
+            });
+
+            cancelNewEntryBtn.addEventListener('click', () => closeNewEntryModal());
+            closeNewEntryModalBtn.addEventListener('click', () => closeNewEntryModal());
+            newEntryModal.addEventListener('click', (e) => {
+                if (e.target === newEntryModal) closeNewEntryModal();
             });
             
             addNameBtn.addEventListener('click', () => {
@@ -866,6 +855,11 @@
                 } else if (personnel.includes(name)) { alert('此姓名已存在！'); }
                 newNameInput.focus();
             });
+
+            addPositionBtn.addEventListener('click', () => {
+                openNewEntryModal('position');
+            });
+            
             newNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addNameBtn.click(); });
             personnelListDiv.addEventListener('click', (e) => {
                 if (e.target.classList.contains('delete-btn')) {
@@ -887,9 +881,23 @@
             scheduleBody.addEventListener('change', (e) => { 
                 if (e.target.tagName === 'SELECT') {
                     if (e.target.value === '__addNew__') {
-                        handleAddNewPerson(e.target);
+                        openNewEntryModal('person', e.target);
                     } else {
                         saveState(); 
+                        renderVerticalView();
+                    }
+                }
+            });
+
+            scheduleBody.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-position-btn');
+                if (deleteBtn) {
+                    const positionToDelete = deleteBtn.parentElement.dataset.position;
+                     if (confirm(`確定要刪除「${positionToDelete}」這個職位嗎？所有相關排班資料將會被清除。`)) {
+                        positions = positions.filter(p => p !== positionToDelete);
+                        saveState();
+                        renderSchedule();
+                        updateAllDropdowns();
                         renderVerticalView();
                     }
                 }
@@ -903,7 +911,7 @@
                     const tableSelect = document.getElementById(`cell-${position}-${day}`);
                     
                     if (verticalSelect.value === '__addNew__') {
-                        handleAddNewPerson(verticalSelect);
+                        openNewEntryModal('person', verticalSelect);
                     } else {
                         if (tableSelect) {
                             tableSelect.value = verticalSelect.value;
@@ -927,6 +935,4 @@
     </script>
 </body>
 </html>
-
-
 
