@@ -281,7 +281,7 @@
             <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h2 class="text-2xl font-bold">勤務分配表</h2>
                 <button id="geminiSuggestBtn" class="action-btn btn-ai-suggest no-screenshot">
-                    <i data-lucide="sparkles"></i>
+                    <i data-lucide="shuffle"></i>
                     <span>✨ 自動隨緣排班</span>
                 </button>
             </div>
@@ -523,7 +523,7 @@
 
 
             // --- Gemini API 功能 ---
-            async function callGeminiAPI(payload) {
+            async function callGeminiAPI(payload, isJson = false) {
                  if (!apiKey) {
                     alert("請先在程式碼中設定您的 Google Gemini API 金鑰！");
                     return null;
@@ -557,7 +557,7 @@
                 const originalContent = geminiSuggestBtn.innerHTML;
                 
                 geminiSuggestBtn.disabled = true;
-                geminiSuggestBtn.innerHTML = `<i data-lucide="shuffle" class="loading-spinner"></i><span>隨機排班中...</span>`;
+                geminiSuggestBtn.innerHTML = `<i data-lucide="shuffle" class="loading-spinner"></i><span>隨緣排班中...</span>`;
                 lucide.createIcons();
 
                 setTimeout(() => {
@@ -704,7 +704,7 @@
                     const file = new File([blob], '勤務表.png', { type: 'image/png' });
 
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: '一週勤務表', text: '這是一週勤務分配表。' });
+                        await navigator.share({ files: [file], title: '一週勤務表', text: '前賢您好這是一週勤務分配表感謝慈悲' });
                     } else {
                         const imageUrl = URL.createObjectURL(blob);
                         screenshotImage.src = imageUrl;
@@ -800,7 +800,7 @@
                     positions = JSON.parse(savedPositions);
                 }
                 
-                const isHidden = localStorage.getItem('personnelSectionHidden') === 'true';
+                const isHidden = localStorage.getItem('personnelSectionHidden') !== 'false';
                 personnelManagementContent.classList.toggle('hidden', isHidden);
                 personnelToggleButton.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
 
@@ -993,6 +993,4 @@
     </script>
 </body>
 </html>
-
-
 
