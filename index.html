@@ -4,208 +4,186 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>一週勤務表 (AI 智慧版)</title>
-    <!-- 引入 Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 html2canvas 函式庫來實現截圖功能 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- 引入 Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- 引入 Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- 引入 Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 html2canvas 函式庫來實現截圖功能 --><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- 引入 Lucide Icons --><script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 引入 Google Fonts --><link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
     <style>
         /* CSS 變數定義 */
         :root {
-            --color-bg: #fdfaf6; /* 溫潤米白背景 */
-            --color-surface: rgba(255, 255, 255, 0.7); /* 半透明表面 */
-            --color-primary: #b9936c; /* 暗金 */
-            --color-primary-dark: #9f7b55;
-            --color-text-header: #4a3f35; /* 沉穩木褐 */
-            --color-text-body: #6d5d4b;
-            --color-border: #e0d5c6; /* 雅致邊框 */
-            --color-accent-danger: #c0392b; /* 朱紅 */
-            --color-accent-success: #27ae60;
+            --color-bg: #fdfaf6;
+            --color-surface: #ffffff;
+            --color-header-text: #5d4037;
+            --color-body-text: #795548;
+            --color-name-text: #3e2723;
+            --color-border: #e0d5c6;
+            --color-accent-gold: #a1887f;
+            --color-accent-gold-text: #ffffff;
+            --color-accent-blue: #1565c0;
+            --color-accent-green: #2e7d32;
+            --color-accent-red: #c62828;
         }
 
-        /* 頁面載入動畫 */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* 動畫定義 */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float-glow {
+            0%, 100% { filter: drop-shadow(0 4px 8px rgba(93, 64, 55, 0.2)); }
+            50% { filter: drop-shadow(0 8px 16px rgba(93, 64, 55, 0.3)); }
         }
+
 
         /* 整體樣式 */
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: var(--color-bg);
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="none" stroke-width="1" stroke="rgba(185, 147, 108, 0.07)" d="M-2,2 l4,-4 M0,20 l20,-20 M18,22 l4,-4"/></svg>');
-            color: var(--color-text-body);
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><g fill-opacity="0.05"><circle fill="%23a1887f" cx="50" cy="50" r="50"/></g></svg>');
+            color: var(--color-body-text);
             animation: fadeIn 0.8s ease-out;
         }
 
         #captureArea {
+            position: relative;
             background-color: var(--color-surface);
             backdrop-filter: blur(16px);
-            border: 2px solid transparent;
-            box-shadow: 0 20px 50px -20px rgba(74, 63, 53, 0.3);
-            border-image: linear-gradient(to bottom right, #d4af87, #fdfaf6, #d4af87) 1;
+            border: 1px solid var(--color-border);
+            box-shadow: 0 20px 50px -20px rgba(93, 64, 55, 0.25);
             transition: all 0.3s ease-in-out;
+        }
+
+        .header-logo {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            width: 80px;
+            height: auto;
+            opacity: 0.9;
+            animation: float-glow 6s ease-in-out infinite;
         }
 
         /* 標題字體 */
         h1, h2, h3 {
             font-family: 'Noto Serif TC', serif;
-            color: var(--color-text-header);
             letter-spacing: 0.05em;
+            color: var(--color-header-text);
         }
-        h1 {
-            font-size: 2.75rem; /* 44px */
-            text-shadow: 1px 1px 2px rgba(74, 63, 53, 0.1);
-        }
+        h1 { font-size: 2.75rem; }
 
         .table-container {
             overflow-x: auto;
         }
 
         /* 表格樣式 */
-        table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-        }
-        th, td {
-            border: 1px solid var(--color-border);
-            padding: 0.75rem 1rem;
-            text-align: center;
-            white-space: nowrap;
-        }
+        table { border-collapse: separate; border-spacing: 0; width: 100%; }
+        th, td { border: 1px solid var(--color-border); padding: 0.75rem 1rem; text-align: center; white-space: nowrap; }
         th {
-            background-color: rgba(253, 250, 246, 0.8);
-            backdrop-filter: blur(4px);
+            background-color: #f7f5f2;
             font-weight: 700;
-            color: var(--color-text-header);
+            color: var(--color-header-text);
             font-family: 'Noto Serif TC', serif;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            border-bottom: 2px solid var(--color-primary);
-            font-size: 0.8rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+            position: sticky; top: 0; z-index: 10;
+            border-bottom: 2px solid var(--color-accent-gold);
+            font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;
         }
-        tbody tr {
-             transition: background-color 0.3s ease;
-        }
-        tbody tr:hover {
-            background-color: rgba(185, 147, 108, 0.08);
-        }
+        tbody tr { transition: background-color 0.3s ease; }
+        tbody tr:hover { background-color: #fbfaf8; }
 
         /* 輸入框 & 下拉選單 */
         select, input[type="text"] {
-            cursor: pointer;
-            width: 100%;
-            min-width: 130px;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
+            cursor: pointer; width: 100%; min-width: 130px;
+            padding: 0.5rem; border-radius: 0.5rem;
             border: 1px solid var(--color-border);
             background-color: #fff;
-            color: var(--color-text-body);
+            color: var(--color-name-text);
             transition: all 0.2s ease-in-out;
-            font-size: 1.125rem; /* 姓名加大 */
+            font-size: 1.25rem; /* 姓名加大 */
+            font-weight: 700;
+            text-shadow: none;
         }
         select:focus, input[type="text"]:focus {
             outline: none;
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(185, 147, 108, 0.2);
-            background-color: #fefcf9;
+            border-color: var(--color-accent-gold);
+            box-shadow: 0 0 0 3px rgba(161, 136, 127, 0.2);
+            background-color: #fff;
         }
 
         /* 刪除按鈕 */
         .delete-btn {
-            background-color: #fbeee C; color: #a44a3f; width: 1.25rem; height: 1.25rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px; font-size: 0.875rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s, color 0.2s, transform 0.2s;
+            background-color: #ffebee; color: #c62828; width: 1.25rem; height: 1.25rem; display: flex; align-items: center; justify-content: center; border-radius: 9999px; font-size: 0.875rem; font-weight: bold; cursor: pointer; transition: all 0.2s;
         }
-        .delete-btn:hover {
-            background-color: var(--color-accent-danger); color: white; transform: scale(1.1);
-        }
+        .delete-btn:hover { background-color: var(--color-accent-red); color: white; transform: scale(1.1); }
         
         /* 職位標題 */
         .position-header {
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            background-color: rgba(185, 147, 108, 0.05) !important;
-            font-weight: 700;
-            padding: 0.5rem;
-            color: var(--color-text-header);
+            writing-mode: vertical-rl; text-orientation: mixed;
+            background-color: #f7f5f2 !important;
+            font-weight: 700; padding: 0.5rem;
+            color: var(--color-header-text);
             font-family: 'Noto Serif TC', serif;
         }
 
         /* 主要操作按鈕 */
         .action-btn {
-            display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; padding: 0.75rem 1.5rem; border-radius: 9999px; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px -5px rgba(74, 63, 53, 0.15); border: 1px solid transparent;
+            display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; padding: 0.75rem 1.5rem; border-radius: 9999px; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px -5px rgba(93, 64, 55, 0.2); border: 1px solid transparent;
         }
         .action-btn:hover {
             transform: translateY(-2px) scale(1.03);
-            box-shadow: 0 8px 25px -8px rgba(74, 63, 53, 0.25);
+            box-shadow: 0 8px 25px -8px rgba(93, 64, 55, 0.3);
         }
-        .action-btn:active {
-             transform: translateY(1px) scale(0.98);
-             box-shadow: 0 2px 8px -3px rgba(74, 63, 53, 0.2);
-        }
-        .action-btn:disabled {
-            opacity: 0.7; cursor: not-allowed; transform: translateY(0);
-        }
+        .action-btn:active { transform: translateY(1px) scale(0.98); box-shadow: 0 2px 8px -3px rgba(93, 64, 55, 0.25); }
+        .action-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: translateY(0); }
         .loading-spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         /* Modal 樣式 */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; visibility: hidden; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; visibility: hidden; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modal-overlay.visible { opacity: 1; visibility: visible; }
         .modal-content {
-            background: var(--color-bg); padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; border: 1px solid var(--color-border); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--color-bg);
+            padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%;
+            border: 1px solid var(--color-border);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modal-overlay.visible .modal-content { transform: scale(1); }
 
-        /* 收合區塊過渡動畫 */
-        .collapsible-content { max-height: 1000px; overflow: hidden; transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out; }
-        .collapsible-content.hidden { max-height: 0; margin-top: 0 !important; }
+        /* 收合區塊 */
+        .collapsible-content { max-height: 1000px; overflow: hidden; transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out, opacity 0.5s; opacity: 1; }
+        .collapsible-content.hidden { max-height: 0; margin-top: 0 !important; opacity: 0; }
         
-        /* 按鈕顏色配置 */
-        .btn-add { background-color: var(--color-primary); color: white; border-color: var(--color-primary-dark); }
-        .btn-add:hover { background-color: var(--color-primary-dark); }
-        .btn-ai-suggest { background-image: linear-gradient(135deg, #a07c52, #d4af87); color: white; }
-        .btn-ai-reminder { background-image: linear-gradient(135deg, #5a7d7c, #88d3ce); color: white; }
-        .btn-screenshot { background-color: #2c8a7c; color: white; }
-        .btn-clear { background-color: var(--color-accent-danger); color: white; }
+        /* 按鈕顏色 */
+        .btn-add { background-color: var(--color-header-text); color: white; }
+        .btn-ai-suggest, .btn-ai-reminder { background-color: var(--color-accent-blue); color: white; }
+        .btn-screenshot { background-color: var(--color-accent-green); color: white; }
+        .btn-clear { background-color: var(--color-accent-red); color: white; }
         
         /* 人員標籤 */
         .person-tag {
-            background-color: rgba(185, 147, 108, 0.1);
-            border: 1px solid rgba(185, 147, 108, 0.2);
-            color: var(--color-text-header);
-            font-size: 1rem; /* 增加人員標籤字體大小 */
+            background-color: #e8eaf6;
+            border: 1px solid #c5cae9;
+            color: #3f51b5;
+            font-size: 1.1rem;
+            font-weight: 700;
         }
         
         /* 直立式檢視 */
         .vertical-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-        .day-card { background-color: rgba(255,255,255,0.5); border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 4px 12px -4px rgba(74, 63, 53, 0.1); }
-        .day-card h3 { font-family: 'Noto Serif TC', serif; font-size: 1.25rem; color: var(--color-primary); border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .day-card { background-color: #fafafa; border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 4px 12px -4px rgba(93, 64, 55, 0.1); }
+        .day-card h3 { font-size: 1.25rem; color: var(--color-header-text); border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; margin-bottom: 1rem; }
         .day-card .assignment-row { padding: 0.75rem 0; border-bottom: 1px dashed var(--color-border); }
         .day-card .assignment-row:last-child { border-bottom: none; }
-        .day-card .position { font-weight: 500; color: var(--color-text-header); font-size: 1rem; display: block; margin-bottom: 0.25rem; }
-        .day-card select { font-size: 1.125rem; font-weight: 500; }
+        .day-card .position { font-weight: 500; color: var(--color-body-text); font-size: 1rem; display: block; margin-bottom: 0.25rem; }
+        .day-card select { font-size: 1.25rem; font-weight: 700; }
+        .day-card select option { text-shadow: none; }
 
         /* 檢視切換按鈕 */
         #viewToggleBtn {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 40;
-            width: 3.5rem;
-            height: 3.5rem;
-            border-radius: 9999px;
-            box-shadow: 0 8px 25px -8px rgba(74, 63, 53, 0.4);
+            position: fixed; bottom: 2rem; right: 2rem; z-index: 40;
+            width: 3.5rem; height: 3.5rem; border-radius: 9999px;
+            box-shadow: 0 8px 25px -8px rgba(93, 64, 55, 0.4);
         }
 
     </style>
@@ -213,14 +191,14 @@
 <body class="p-4 md:p-8">
 
     <div id="captureArea" class="max-w-7xl mx-auto rounded-2xl p-6 md:p-8">
+        <img src="https://raw.githubusercontent.com/endfew1-dotcom/rotation/main/a6477c63-c04c-4cc9-b26f-27476b7255a7.png" alt="logo" class="header-logo no-screenshot" />
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold">一週勤務表</h1>
-            <p class="mt-3 text-lg opacity-80">AI 智慧排版・締結善緣</p>
-            <div class="w-24 h-px bg-gradient-to-r from-transparent via-[--color-primary] to-transparent mx-auto mt-4"></div>
+            <p class="mt-3 text-lg opacity-80">締結善緣</p>
+            <div class="w-24 h-px bg-gradient-to-r from-transparent via-[var(--color-accent-gold)] to-transparent mx-auto mt-4"></div>
         </header>
 
-        <!-- 人員管理區 -->
-        <div class="mb-8 p-6 bg-gray-50/10 rounded-lg border border-[var(--color-border)]/50 no-screenshot">
+        <!-- 人員管理區 --><div class="mb-8 p-6 bg-gray-50/10 rounded-lg border border-[var(--color-border)]/50 no-screenshot">
             <h2 class="text-xl font-semibold mb-4">人員名單管理</h2>
             
             <div class="flex flex-col sm:flex-row gap-4 mb-4">
@@ -240,8 +218,7 @@
             
             <div id="personnelManagementContent" class="collapsible-content mt-4">
                 <div id="personnelList" class="flex flex-wrap gap-3">
-                    <!-- 人員名單 -->
-                </div>
+                    <!-- 人員名單 --></div>
             </div>
         </div>
         
@@ -296,12 +273,11 @@
         <i data-lucide="list"></i>
     </button>
 
-    <!-- AI 提醒訊息 Modal -->
-    <div id="reminderModal" class="modal-overlay">
+    <!-- AI 提醒訊息 Modal --><div id="reminderModal" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">AI 產生的提醒訊息</h2>
-                <button id="closeModalBtn" class="text-gray-400 hover:text-[var(--color-text-header)]">
+                <button id="closeModalBtn" class="text-gray-400 hover:text-[var(--color-header-text)]">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -316,17 +292,16 @@
         </div>
     </div>
     
-    <!-- Screenshot Preview Modal -->
-    <div id="screenshotModal" class="modal-overlay">
+    <!-- Screenshot Preview Modal --><div id="screenshotModal" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">預覽與分享</h2>
-                <button id="closeScreenshotModalBtn" class="text-gray-400 hover:text-[var(--color-text-header)]">
+                <button id="closeScreenshotModalBtn" class="text-gray-400 hover:text-[var(--color-header-text)]">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
             <p class="opacity-80 mb-4">圖片已產生。您可以在圖片上按右鍵「複製影像」，或點擊下方按鈕下載後，再傳送到 LINE 或其他通訊軟體。</p>
-            <div class="mb-4 p-2 border border-dashed border-[var(--color-border)] rounded-lg bg-white">
+            <div class="mb-4 p-2 border border-dashed border-[var(--color-border)] rounded-lg bg-white/90">
                  <img id="screenshotImage" src="" alt="勤務表截圖" class="w-full h-auto rounded">
             </div>
             <div class="mt-6 text-right">
@@ -338,19 +313,17 @@
         </div>
     </div>
     
-    <!-- Day Selection Modal -->
-    <div id="daySelectionModal" class="modal-overlay">
+    <!-- Day Selection Modal --><div id="daySelectionModal" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">選擇要截圖的日期</h2>
-                <button id="closeDaySelectionModalBtn" class="text-gray-400 hover:text-[var(--color-text-header)]">
+                <button id="closeDaySelectionModalBtn" class="text-gray-400 hover:text-[var(--color-header-text)]">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
             <p class="opacity-80 mb-4">請勾選您想要包含在截圖中的星期。</p>
             <div id="daySelectionCheckboxes" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                <!-- Checkboxes will be inserted here by JS -->
-            </div>
+                <!-- Checkboxes will be inserted here by JS --></div>
             <div class="mt-6 text-right">
                 <button id="startScreenshotBtn" class="action-btn btn-add">
                     <i data-lucide="camera"></i>
@@ -360,12 +333,11 @@
         </div>
     </div>
 
-    <!-- Add New Person Modal -->
-    <div id="newPersonModal" class="modal-overlay">
+    <!-- Add New Person Modal --><div id="newPersonModal" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">新增人員</h2>
-                <button id="closeNewPersonModalBtn" class="text-gray-400 hover:text-[var(--color-text-header)]">
+                <button id="closeNewPersonModalBtn" class="text-gray-400 hover:text-[var(--color-header-text)]">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -626,7 +598,7 @@
                 days.forEach((day) => {
                     daySelectionCheckboxes.innerHTML += `
                         <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-gray-100">
-                            <input type="checkbox" value="${day}" class="h-5 w-5 rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]" checked>
+                            <input type="checkbox" value="${day}" class="h-5 w-5 rounded border-gray-300 text-[var(--color-accent-gold)] focus:ring-[var(--color-accent-gold)]">
                             <span class="text-gray-700 font-medium">星期${day}</span>
                         </label>
                     `;
@@ -665,7 +637,7 @@
                     <header class="text-center mb-8">
                         <h1 class="text-4xl font-bold">${document.querySelector('h1').textContent}</h1>
                         <p class="mt-3 text-lg opacity-80">${document.querySelector('header p').textContent}</p>
-                        <div class="w-24 h-px bg-gradient-to-r from-transparent via-[--color-primary] to-transparent mx-auto mt-4"></div>
+                        <div class="w-24 h-px bg-gradient-to-r from-transparent via-[var(--color-accent-gold)] to-transparent mx-auto mt-4"></div>
                     </header>
                     <h2 class="text-2xl font-bold text-center mb-4">勤務分配表</h2>
                 `;
@@ -692,7 +664,7 @@
                         selectedDays.forEach(day => {
                             const select = document.getElementById(`cell-${position}-${day}`);
                             const person = select.value || '未安排';
-                            bodyRowHtml += `<td><span style="font-size: 1.125rem;">${escapeHTML(person)}</span></td>`;
+                            bodyRowHtml += `<td><span class="person">${escapeHTML(person)}</span></td>`;
                         });
                         bodyRowHtml += '</tr>';
                         tbody.innerHTML += bodyRowHtml;
@@ -711,6 +683,9 @@
                                 const parent = sel.parentElement;
                                 const span = document.createElement('span');
                                 span.className = 'person';
+                                span.style.fontSize = '1.125rem';
+                                span.style.fontWeight = '700';
+                                span.style.color = 'var(--color-name-text)';
                                 span.textContent = sel.value || '未安排';
                                 parent.appendChild(span);
                                 sel.remove();
@@ -864,7 +839,7 @@
                         activeSelectElement.value = newName;
                         activeSelectElement.dispatchEvent(new Event('change', { bubbles: true }));
                     }
-                    closeNewPersonModal(false); // Don't reset value since we just set it
+                    closeNewPersonModal(false);
                 } else {
                     alert('姓名不能為空！');
                 }
