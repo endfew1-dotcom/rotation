@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>一週勤務表 (AI 智慧版)</title>
-    <!-- 引入 Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 html2canvas 函式庫來實現截圖功能 --><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- 引入 Lucide Icons --><script src="https://unpkg.com/lucide@latest"></script>
-    <!-- 引入 Google Fonts --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 html2canvas 函式庫來實現截圖功能 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- 引入 Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 引入 Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
     <style>
@@ -15,15 +19,16 @@
         :root {
             --color-bg: #fdfaf6;
             --color-surface: #ffffff;
-            --color-header-text: #5d4037;
-            --color-body-text: #795548;
-            --color-name-text: #3e2723;
-            --color-border: #e0d5c6;
-            --color-accent-gold: #a1887f;
+            --color-header-text: #5d4037; /* 深棕色 */
+            --color-body-text: #795548; /* 棕色 */
+            --color-name-text: #3e2723; /* 極深棕色 */
+            --color-border: #e0d5c6; /* 淺灰棕 */
+            --color-accent-gold: #a1887f; /* 暖灰棕色 */
             --color-accent-gold-text: #ffffff;
             --color-accent-blue: #1565c0;
             --color-accent-green: #2e7d32;
             --color-accent-red: #c62828;
+            --color-storage: #f97316; /* 橘色 */
         }
 
         /* 動畫定義 */
@@ -33,9 +38,11 @@
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: var(--color-bg);
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><g fill-opacity="0.05"><circle fill="%23a1887f" cx="50" cy="50" r="50"/></g></svg>');
+            /* 移除可能導致 CORS 錯誤的 SVG 背景圖 */
+            /* background-image: url('data:image/svg+xml,...'); */
             color: var(--color-body-text);
             animation: fadeIn 0.8s ease-out;
+            min-height: 100vh;
         }
 
         #captureArea {
@@ -92,6 +99,14 @@
             box-shadow: 0 0 0 3px rgba(161, 136, 127, 0.2);
             background-color: #fff;
         }
+        /* 針對儲存選單的樣式調整 */
+        .storage-select {
+            min-width: 180px;
+            font-size: 1rem;
+            font-weight: 500;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
 
         /* 刪除按鈕 */
         .delete-btn, .delete-position-btn {
@@ -107,7 +122,6 @@
             color: var(--color-header-text);
             font-family: 'Noto Serif TC', serif;
             cursor: pointer;
-            transition: background-color 0.2s;
             position: relative;
         }
          .position-header:hover {
@@ -140,20 +154,6 @@
             transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modal-overlay.visible .modal-content { transform: scale(1); }
-        .prose { line-height: 1.7; }
-        .prose p { margin-bottom: 1rem; }
-        .prose ul { list-style-type: disc; padding-left: 1.5rem; }
-        .prose li { margin-bottom: 0.5rem; }
-
-        /* 收合區塊 */
-        .collapsible-content { max-height: 1000px; overflow: hidden; transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out, opacity 0.5s; opacity: 1; }
-        .collapsible-content.hidden { max-height: 0; margin-top: 0 !important; opacity: 0; }
-        
-        /* 按鈕顏色 */
-        .btn-add { background-color: var(--color-header-text); color: white; }
-        .btn-ai-suggest { background-color: var(--color-accent-blue); color: white; }
-        .btn-screenshot { background-color: var(--color-accent-green); color: white; }
-        .btn-clear { background-color: var(--color-accent-red); color: white; }
         
         /* 人員標籤 */
         .person-tag {
@@ -195,6 +195,9 @@
             height: 3.5rem;
             border-radius: 9999px;
             box-shadow: 0 8px 25px -8px rgba(93, 64, 55, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         /* 列印樣式 */
@@ -244,7 +247,7 @@
 <body class="p-4 md:p-8">
 
     <div id="captureArea" class="max-w-7xl mx-auto rounded-2xl p-6 md:p-8">
-        <button id="printBtn" title="列印" class="action-btn btn-add floating-btn no-screenshot absolute top-6 right-6">
+        <button id="printBtn" title="列印" class="action-btn bg-gray-600 text-white floating-btn no-screenshot absolute top-6 right-6">
             <i data-lucide="printer"></i>
         </button>
         <header class="text-center mb-8">
@@ -253,12 +256,13 @@
             <div class="w-24 h-px bg-gradient-to-r from-transparent via-[var(--color-accent-gold)] to-transparent mx-auto mt-4"></div>
         </header>
 
-        <!-- 人員管理區 --><div class="mb-8 p-6 bg-gray-50/10 rounded-lg border border-[var(--color-border)]/50 no-screenshot">
+        <!-- 人員管理區 -->
+        <div class="mb-8 p-6 bg-gray-50/10 rounded-lg border border-[var(--color-border)]/50 no-screenshot">
             <h2 class="text-xl font-semibold mb-4">人員名單管理</h2>
             
             <div class="flex flex-col sm:flex-row gap-4 mb-4">
                 <input type="text" id="newName" placeholder="請輸入姓名" class="flex-grow w-full px-4 py-2 rounded-lg focus:outline-none">
-                <button id="addNameBtn" class="action-btn w-full sm:w-auto btn-add">
+                <button id="addNameBtn" class="action-btn w-full sm:w-auto bg-[var(--color-header-text)] text-white hover:bg-opacity-90">
                     <i data-lucide="user-plus"></i>
                     <span>新增人員</span>
                 </button>
@@ -273,19 +277,36 @@
             
             <div id="personnelManagementContent" class="collapsible-content mt-4">
                 <div id="personnelList" class="flex flex-wrap gap-3">
-                    <!-- 人員名單 --></div>
+                    <!-- 人員名單 -->
+                </div>
             </div>
         </div>
         
         <div id="scheduleArea">
             <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h2 class="text-2xl font-bold">勤務分配表</h2>
-                <button id="geminiSuggestBtn" class="action-btn btn-ai-suggest no-screenshot">
+                <button id="geminiSuggestBtn" class="action-btn bg-[var(--color-accent-blue)] text-white hover:bg-opacity-90 no-screenshot">
                     <i data-lucide="shuffle"></i>
                     <span>✨ 自動隨緣排班</span>
                 </button>
             </div>
             
+            <!-- 新增排班表切換和儲存功能區域 -->
+            <div class="flex flex-col sm:flex-row justify-end items-center gap-2 mb-4 no-screenshot p-3 rounded-lg border border-[var(--color-border)]/50 bg-gray-50/50">
+                <label for="scheduleSelector" class="text-sm font-medium text-gray-700 whitespace-nowrap">排班表配置：</label>
+                <select id="scheduleSelector" class="storage-select focus:outline-none focus:ring-2 focus:ring-[var(--color-storage)]">
+                    <option value="current">目前排班表</option>
+                    <option value="saved_1">預設排班一</option>
+                    <option value="saved_2">預設排班二</option>
+                    <option value="saved_3">預設排班三</option>
+                </select>
+                <button id="saveCurrentScheduleBtn" class="action-btn bg-[var(--color-storage)] text-white hover:bg-opacity-90 min-w-[120px] py-2 px-3">
+                    <i data-lucide="download"></i>
+                    <span>儲存到配置</span>
+                </button>
+            </div>
+            <!-- /新增排班表切換和儲存功能區域 -->
+
             <div id="tableView" class="table-container rounded-lg border border-[var(--color-border)]/80 overflow-hidden">
                 <table class="min-w-full">
                     <thead>
@@ -309,28 +330,30 @@
         </div>
         
         <footer class="mt-8 text-center flex flex-wrap justify-center gap-4 no-screenshot">
-             <button id="screenshotBtn" class="action-btn btn-screenshot">
+             <button id="screenshotBtn" class="action-btn bg-[var(--color-accent-green)] text-white hover:bg-opacity-90">
                 <i data-lucide="camera"></i>
                 <span>截圖分享</span>
              </button>
-             <button id="addPositionBtn" class="action-btn btn-add">
+             <button id="addPositionBtn" class="action-btn bg-[var(--color-header-text)] text-white hover:bg-opacity-90">
                 <i data-lucide="plus-circle"></i>
                 <span>新增勤務列</span>
              </button>
-             <button id="clearScheduleBtn" class="action-btn btn-clear">
+             <button id="clearScheduleBtn" class="action-btn bg-[var(--color-accent-red)] text-white hover:bg-opacity-90">
                 <i data-lucide="trash-2"></i>
                 <span>清空排班</span>
             </button>
         </footer>
     </div>
 
+    <!-- 浮動動作按鈕 -->
     <div class="floating-actions no-screenshot">
-        <button id="viewToggleBtn" title="切換檢視模式" class="action-btn btn-add floating-btn">
+        <button id="viewToggleBtn" title="切換檢視模式" class="action-btn bg-[var(--color-header-text)] text-white floating-btn">
             <i data-lucide="list"></i>
         </button>
     </div>
     
-    <!-- Screenshot Preview Modal --><div id="screenshotModal" class="modal-overlay">
+    <!-- Modal 區域 (保持不變) -->
+    <div id="screenshotModal" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">預覽與分享</h2>
@@ -343,7 +366,7 @@
                  <img id="screenshotImage" src="" alt="勤務表截圖" class="w-full h-auto rounded">
             </div>
             <div class="mt-6 text-right">
-                <a id="downloadScreenshotBtn" href="#" download="勤務表.png" class="action-btn btn-add">
+                <a id="downloadScreenshotBtn" href="#" download="勤務表.png" class="action-btn bg-[var(--color-header-text)] text-white hover:bg-opacity-90">
                     <i data-lucide="download"></i>
                     <span>下載圖片</span>
                 </a>
@@ -351,7 +374,7 @@
         </div>
     </div>
     
-    <!-- Day Selection Modal --><div id="daySelectionModal" class="modal-overlay">
+    <div id="daySelectionModal" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">選擇要截圖的日期</h2>
@@ -361,9 +384,10 @@
             </div>
             <p class="opacity-80 mb-4">請勾選您想要包含在截圖中的星期。</p>
             <div id="daySelectionCheckboxes" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                <!-- Checkboxes will be inserted here by JS --></div>
+                <!-- Checkboxes will be inserted here by JS -->
+            </div>
             <div class="mt-6 text-right">
-                <button id="startScreenshotBtn" class="action-btn btn-add">
+                <button id="startScreenshotBtn" class="action-btn bg-[var(--color-accent-green)] text-white hover:bg-opacity-90">
                     <i data-lucide="camera"></i>
                     <span>開始截圖</span>
                 </button>
@@ -371,7 +395,7 @@
         </div>
     </div>
 
-    <!-- Add New Person/Position Modal --><div id="newEntryModal" class="modal-overlay">
+    <div id="newEntryModal" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 id="newEntryModalTitle" class="text-2xl font-bold"></h2>
@@ -385,20 +409,21 @@
                  <button id="cancelNewEntryBtn" class="action-btn bg-gray-200 text-gray-700 hover:bg-gray-300">
                     <span>取消</span>
                 </button>
-                <button id="saveNewEntryBtn" class="action-btn btn-add">
+                <button id="saveNewEntryBtn" class="action-btn bg-[var(--color-header-text)] text-white hover:bg-opacity-90">
                     <i data-lucide="save"></i>
                     <span>儲存</span>
                 </button>
             </div>
         </div>
     </div>
+    <!-- /Modal 區域 -->
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
 
             // --- Gemini API 設定 ---
-            const apiKey = ""; // <--- 在這裡貼上您的 Google Gemini API 金鑰
+            const apiKey = ""; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             // DOM 元素
@@ -432,11 +457,15 @@
             const newEntryNameInput = document.getElementById('newEntryNameInput');
             const cancelNewEntryBtn = document.getElementById('cancelNewEntryBtn');
             const saveNewEntryBtn = document.getElementById('saveNewEntryBtn');
-            const eventContextInput = document.getElementById('eventContextInput');
+            
+            // 新增的 DOM 元素
+            const scheduleSelector = document.getElementById('scheduleSelector');
+            const saveCurrentScheduleBtn = document.getElementById('saveCurrentScheduleBtn');
 
 
             // 應用程式狀態
-            let personnel = [
+            // 預設的人員名單 (用於初次使用，沒有任何儲存時)
+            const DEFAULT_PERSONNEL = [
                 '玉惠', '幼英', '佳妙', '銘利', '興隆', '柏辰', '玉是', '冠華', 
                 '家達', '晨章', '蕙如', '家慶', '桂香', '富燭', '富雪', '夏梅', 
                 '方廷', '婇琂', '郁翔', '梵恆', '丞澤', '鳳璝', '榕鈿', '炳宏', 
@@ -445,12 +474,20 @@
                 '玉恩', '惠如', '俊峰', '俊鋒', '昕燁', '暫停', '玉蕙', '婇娮', 
                 '亦辰', '玉燕', '郁翔', '承澤', '彩炎', '橙澤'
             ];
-            let positions = ['司儀 (開班)', '司儀 (閉班)', '上執禮', '下執禮', '下禮', '百孝經'];
+            const DEFAULT_POSITIONS = ['司儀 (開班)', '司儀 (閉班)', '上執禮', '下執禮', '下禮', '百孝經'];
+
+            let personnel = []; // 實際運行中的人員列表
+            let positions = []; // 實際運行中的職位列表
             const days = ['一', '二', '三', '四', '五', '六', '日'];
-            let currentView = 'table'; // 'table' or 'vertical'
+            let currentView = 'table'; 
             let activeSelectElement = null;
-            let currentModalMode = ''; // 'person' or 'position'
+            let currentModalMode = ''; 
             
+            const SCHEDULE_STORAGE_KEYS = ['saved_1', 'saved_2', 'saved_3'];
+
+            // --- 輔助函數 ---
+            function escapeHTML(str) { return str.replace(/[\&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[match]); }
+
             // --- 收合功能 ---
             togglePersonnelSection.addEventListener('click', () => {
                 const isHidden = personnelManagementContent.classList.toggle('hidden');
@@ -458,17 +495,18 @@
                 localStorage.setItem('personnelSectionHidden', isHidden);
             });
 
-            // --- 檢視模式切換 ---
+            // --- 檢視模式切換 (不變) ---
             function setView(view) {
+                const icon = view === 'vertical' ? 'layout-grid' : 'list';
                 if (view === 'vertical') {
                     tableView.classList.add('hidden');
                     verticalView.classList.remove('hidden');
-                    viewToggleBtn.innerHTML = `<i data-lucide="layout-grid"></i>`;
+                    viewToggleBtn.innerHTML = `<i data-lucide="${icon}"></i>`;
                     currentView = 'vertical';
                 } else {
                     tableView.classList.remove('hidden');
                     verticalView.classList.add('hidden');
-                    viewToggleBtn.innerHTML = `<i data-lucide="list"></i>`;
+                    viewToggleBtn.innerHTML = `<i data-lucide="${icon}"></i>`;
                     currentView = 'table';
                 }
                 lucide.createIcons();
@@ -508,6 +546,7 @@
                     
                     dayCard.innerHTML = cardContent;
 
+                    // 載入當前排班值
                     positions.forEach(position => {
                         const tableSelect = document.getElementById(`cell-${position}-${day}`);
                         const currentValue = tableSelect ? tableSelect.value : '';
@@ -522,33 +561,7 @@
             }
 
 
-            // --- Gemini API 功能 ---
-            async function callGeminiAPI(payload, isJson = false) {
-                 if (!apiKey) {
-                    alert("請先在程式碼中設定您的 Google Gemini API 金鑰！");
-                    return null;
-                }
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(`API 錯誤: ${error.error.message}`);
-                    }
-                    const result = await response.json();
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!text) throw new Error("從 API 收到的回應格式不正確。");
-                    return text;
-                } catch (error) {
-                    console.error("呼叫 Gemini API 失敗:", error);
-                    alert(`與 AI 溝通時發生錯誤：${error.message}`);
-                    return null;
-                }
-            }
-
+            // --- Gemini API 功能 (隨機排班) ---
             geminiSuggestBtn.addEventListener('click', () => {
                 if (personnel.length === 0) {
                     alert("人員名單是空的，無法進行排班。");
@@ -563,14 +576,17 @@
                 setTimeout(() => {
                     const selects = document.querySelectorAll('#scheduleBody select');
                     selects.forEach(select => {
-                        const randomIndex = Math.floor(Math.random() * personnel.length);
-                        const randomPerson = personnel[randomIndex];
+                        // 包含空白選項 (未安排)
+                        const allOptions = [''].concat(personnel); 
+                        const randomIndex = Math.floor(Math.random() * allOptions.length);
+                        const randomPerson = allOptions[randomIndex];
                         select.value = randomPerson;
                     });
     
-                    saveState();
+                    // 隨機排班後，儲存到 "current" 狀態
+                    saveState('current');
                     renderVerticalView();
-                    alert("已成功將所有人員隨機排入班表！");
+                    console.log("已成功將所有人員隨機排入班表！");
     
                     geminiSuggestBtn.disabled = false;
                     geminiSuggestBtn.innerHTML = originalContent;
@@ -578,7 +594,7 @@
                 }, 50); 
             });
             
-            // --- Modal 關閉事件 ---
+            // --- 截圖分享 (修復錯誤) ---
             closeScreenshotModalBtn.addEventListener('click', () => screenshotModal.classList.remove('visible'));
             screenshotModal.addEventListener('click', (e) => { 
                 if (e.target === screenshotModal) screenshotModal.classList.remove('visible'); 
@@ -589,13 +605,13 @@
                 if (e.target === daySelectionModal) daySelectionModal.classList.remove('visible'); 
             });
             
-            // --- 截圖分享主流程 ---
             screenshotBtn.addEventListener('click', () => {
                 daySelectionCheckboxes.innerHTML = '';
-                days.forEach((day) => {
+                days.forEach((day, index) => {
+                    const checked = index < 7 ? 'checked' : ''; 
                     daySelectionCheckboxes.innerHTML += `
                         <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-gray-100">
-                            <input type="checkbox" value="${day}" class="h-5 w-5 rounded border-gray-300 text-[var(--color-accent-gold)] focus:ring-[var(--color-accent-gold)]">
+                            <input type="checkbox" value="${day}" ${checked} class="h-5 w-5 rounded border-gray-300 text-[var(--color-accent-gold)] focus:ring-[var(--color-accent-gold)]">
                             <span class="text-gray-700 font-medium">星期${day}</span>
                         </label>
                     `;
@@ -607,7 +623,7 @@
                 const selectedDays = Array.from(daySelectionCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
 
                 if (selectedDays.length === 0) {
-                    alert("請至少選擇一個要截圖的日期。");
+                    console.error("請至少選擇一個要截圖的日期。"); 
                     return;
                 }
 
@@ -627,13 +643,19 @@
                 tempCaptureContainer.style.top = '0';
                 tempCaptureContainer.style.padding = '1.5rem';
                 tempCaptureContainer.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--color-bg');
-                tempCaptureContainer.style.width = document.getElementById('captureArea').offsetWidth + 'px';
+                tempCaptureContainer.style.width = document.getElementById('captureArea').offsetWidth + 'px'; 
                 document.body.appendChild(tempCaptureContainer);
+
+                // 安全地獲取標題文字
+                const headerH1 = document.querySelector('h1');
+                const headerP = document.querySelector('header p');
+                const headerH1Text = headerH1 ? headerH1.textContent : '一週勤務表';
+                const headerPText = headerP ? headerP.textContent : '締結善緣';
 
                 tempCaptureContainer.innerHTML = `
                     <header class="text-center mb-8">
-                        <h1 class="text-4xl font-bold">${document.querySelector('h1').textContent}</h1>
-                        <p class="mt-3 text-lg opacity-80">${document.querySelector('header p').textContent}</p>
+                        <h1 class="text-4xl font-bold">${headerH1Text}</h1>
+                        <p class="mt-3 text-lg opacity-80">${headerPText}</p>
                         <div class="w-24 h-px bg-gradient-to-r from-transparent via-[var(--color-accent-gold)] to-transparent mx-auto mt-4"></div>
                     </header>
                     <h2 class="text-2xl font-bold text-center mb-4">勤務分配表</h2>
@@ -644,7 +666,8 @@
                 if (currentView === 'table') {
                     const tableContainer = document.createElement('div');
                     tableContainer.className = 'table-container rounded-lg border border-[var(--color-border)]/80 overflow-hidden';
-                    
+                    tableContainer.style.overflowX = 'visible'; 
+
                     const table = document.createElement('table');
                     table.className = 'min-w-full';
                     
@@ -697,7 +720,9 @@
                     const canvas = await html2canvas(tempCaptureContainer, {
                         scale: 2,
                         logging: false,
-                        useCORS: true,
+                        // 設定 useCORS 為 false，依賴瀏覽器載入本地圖片和字體
+                        useCORS: false, 
+                        backgroundColor: getComputedStyle(document.body).getPropertyValue('--color-bg'),
                     });
 
                     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
@@ -713,9 +738,8 @@
                     }
                 } catch (error) {
                     console.error('截圖/分享失敗:', error);
-                    if (error.name !== 'AbortError') {
-                        alert('抱歉，截圖或分享功能發生錯誤。');
-                    }
+                    // 為了除錯，我們將錯誤資訊傳給用戶
+                    alert(`截圖功能發生錯誤。請檢查瀏覽器控制台的詳細錯誤訊息，或嘗試使用最新版 Chrome/Edge/Safari 瀏覽器。錯誤詳情：${error.message}`);
                 } finally {
                     document.body.removeChild(tempCaptureContainer);
                     screenshotBtn.disabled = false;
@@ -726,24 +750,25 @@
             
             // --- 核心功能 (渲染、儲存、讀取) ---
             function getOptionsHtml() {
-                const uniquePersonnel = [...new Set(personnel)];
-                let optionsHtml = '<option value="">-- 請選擇 --</option>';
-                optionsHtml += '<option value="__addNew__">[ ++ 自行輸入 ++ ]</option>';
+                const uniquePersonnel = [...new Set(personnel)].filter(n => n.trim() !== '');
+                let optionsHtml = '<option value="">-- 請選擇 (未安排) --</option>';
+                optionsHtml += '<option value="__addNew__">[ ++ 自行輸入/新增人員 ++ ]</option>';
                 optionsHtml += uniquePersonnel.map(name => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`).join('');
                 return optionsHtml;
             }
 
             function renderPersonnelList() {
-                personnel = [...new Set(personnel)];
+                personnel = [...new Set(personnel)].filter(n => n.trim() !== '');
                 personnelListDiv.innerHTML = '';
                 if (personnel.length === 0) { personnelListDiv.innerHTML = '<p class="opacity-70">目前沒有人員，請新增。</p>'; }
-                personnel.forEach((name, index) => {
+                personnel.forEach((name) => {
                     const personTag = document.createElement('div');
                     personTag.className = 'flex items-center gap-2 person-tag px-3 py-1.5 rounded-full font-medium';
-                    personTag.innerHTML = `<span>${escapeHTML(name)}</span><button class="delete-btn" data-index="${index}" title="刪除 ${escapeHTML(name)}">×</button>`;
+                    personTag.innerHTML = `<span>${escapeHTML(name)}</span><button class="delete-btn" data-name="${escapeHTML(name)}" title="刪除 ${escapeHTML(name)}">×</button>`;
                     personnelListDiv.appendChild(personTag);
                 });
             }
+
             function renderSchedule() {
                 scheduleBody.innerHTML = '';
                 positions.forEach(position => {
@@ -763,7 +788,7 @@
                     days.forEach(day => {
                         const cell = document.createElement('td');
                         const select = document.createElement('select');
-                        select.id = `cell-${position}-${day}`;
+                        select.id = `cell-${escapeHTML(position)}-${day}`;
                         cell.appendChild(select);
                         row.appendChild(cell);
                     });
@@ -771,60 +796,162 @@
                 });
                 lucide.createIcons();
             }
+
             function updateAllDropdowns() {
                 const optionsHtml = getOptionsHtml();
-                const selects = document.querySelectorAll('#scheduleBody select, #verticalView select');
+                const selects = document.querySelectorAll('#scheduleArea select');
                 selects.forEach(select => {
                     const selectedValue = select.value;
                     select.innerHTML = optionsHtml;
-                    if (personnel.includes(selectedValue)) { 
+                    if (personnel.includes(selectedValue) || selectedValue === '') { 
                         select.value = selectedValue; 
+                    } else if (selectedValue === '__addNew__') {
+                        select.value = '';
                     }
                 });
             }
-            function saveState() {
-                localStorage.setItem('dutyRosterPersonnel', JSON.stringify([...new Set(personnel)]));
-                localStorage.setItem('dutyRosterPositions', JSON.stringify(positions));
+
+            /**
+             * 儲存當前的排班表完整狀態 (人員、職位、排班數據) 到 localStorage
+             * @param {string} keyPrefix - 儲存的鍵名，例如 'current' 或 'saved_1'
+             */
+            function saveState(keyPrefix = 'current') {
                 const scheduleData = {};
-                document.querySelectorAll('#scheduleBody select').forEach(select => { if (select.value) { scheduleData[select.id] = select.value; } });
-                localStorage.setItem('dutyRosterSchedule', JSON.stringify(scheduleData));
-            }
-            function loadState() {
-                const savedPersonnel = localStorage.getItem('dutyRosterPersonnel');
-                if (savedPersonnel) { 
-                    const loadedPersonnel = JSON.parse(savedPersonnel);
-                    personnel = [...new Set([...personnel, ...loadedPersonnel])];
-                }
-                const savedPositions = localStorage.getItem('dutyRosterPositions');
-                if(savedPositions) {
-                    positions = JSON.parse(savedPositions);
-                }
+                document.querySelectorAll('#scheduleBody select').forEach(select => { 
+                    if (select.value && select.value !== '__addNew__') {
+                        scheduleData[select.id] = select.value; 
+                    } 
+                });
+
+                // 儲存完整的排班狀態對象
+                const fullState = {
+                    personnel: [...new Set(personnel)].filter(n => n.trim() !== ''),
+                    positions: positions,
+                    schedule: scheduleData
+                };
+
+                localStorage.setItem(`dutyRosterState_${keyPrefix}`, JSON.stringify(fullState));
                 
-                const isHidden = localStorage.getItem('personnelSectionHidden') !== 'false';
+                // 為了兼容性，仍保存最新的名單和職位到通用鍵 (確保舊邏輯的讀取仍然有效)
+                localStorage.setItem('dutyRosterPersonnel', JSON.stringify(fullState.personnel));
+                localStorage.setItem('dutyRosterPositions', JSON.stringify(fullState.positions));
+            }
+
+            /**
+             * 載入指定的排班表配置，並更新頁面
+             * @param {string} keyPrefix - 載入的鍵名，例如 'current' 或 'saved_1'
+             */
+            function loadSchedule(keyPrefix) {
+                const savedFullState = localStorage.getItem(`dutyRosterState_${keyPrefix}`);
+                let isScheduleLoaded = false;
+                
+                if (savedFullState) {
+                    try {
+                        const fullState = JSON.parse(savedFullState);
+                        
+                        // 1. 覆蓋人員和職位列表
+                        personnel = fullState.personnel || []; 
+                        positions = fullState.positions || DEFAULT_POSITIONS;
+                        
+                        // 2. 重新渲染介面結構
+                        renderSchedule();
+                        renderPersonnelList();
+                        updateAllDropdowns();
+
+                        // 3. 載入排班數據
+                        const scheduleData = fullState.schedule || {};
+                        for (const id in scheduleData) { 
+                            const select = document.getElementById(id); 
+                            if (select) { 
+                                // 確保儲存的值仍然是當前下拉選單的一個有效選項
+                                if ([...select.options].some(option => option.value === scheduleData[id])) {
+                                    select.value = scheduleData[id]; 
+                                    isScheduleLoaded = true;
+                                }
+                            } 
+                        }
+                    } catch (e) {
+                        console.error("載入排班表時發生錯誤，資料可能已損壞。", e);
+                    }
+                } else {
+                    // 如果沒有儲存的配置 (通常是第一次使用)
+                    if (keyPrefix === 'current') {
+                        // 初始化為預設值
+                        personnel = DEFAULT_PERSONNEL;
+                        positions = DEFAULT_POSITIONS;
+                    } else {
+                        // 載入空配置時，確保列表清空
+                        personnel = [];
+                        positions = DEFAULT_POSITIONS;
+                    }
+                    // 重新渲染介面結構
+                    renderSchedule();
+                    renderPersonnelList();
+                    updateAllDropdowns();
+                }
+
+                // 4. 更新 View
+                const storedVisibility = localStorage.getItem('personnelSectionHidden');
+                let isHidden;
+                if (storedVisibility === null) {
+                    // 預設收起來
+                    isHidden = true;
+                    localStorage.setItem('personnelSectionHidden', 'true');
+                } else {
+                    isHidden = storedVisibility === 'true';
+                }
+
                 personnelManagementContent.classList.toggle('hidden', isHidden);
                 personnelToggleButton.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-
-                renderSchedule();
-                renderPersonnelList();
-                updateAllDropdowns();
-
-                const savedSchedule = localStorage.getItem('dutyRosterSchedule');
-                if (savedSchedule) {
-                    const scheduleData = JSON.parse(savedSchedule);
-                    for (const id in scheduleData) { 
-                        const select = document.getElementById(id); 
-                        if (select) { select.value = scheduleData[id]; } 
-                    }
-                }
                 
                 const savedView = localStorage.getItem('dutyRosterView') || 'table';
                 setView(savedView);
                 renderVerticalView();
 
+                // 5. 提示用戶
+                if(keyPrefix !== 'current') {
+                    const slotName = scheduleSelector.options[scheduleSelector.selectedIndex].text;
+                    if (isScheduleLoaded) {
+                         console.log(`✅ 載入成功：排班配置「${slotName}」。`);
+                    } else {
+                         console.log(`⚠️ 排班配置「${slotName}」沒有儲存的資料，已載入空排班表。`);
+                    }
+                }
+
+                // 6. 確保選單選中正確的 key
+                scheduleSelector.value = keyPrefix;
             }
 
-            function escapeHTML(str) { return str.replace(/[&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[match]); }
+            // --- 事件監聽器 (儲存/載入邏輯已更新為完整狀態儲存) ---
+
+            saveCurrentScheduleBtn.addEventListener('click', () => {
+                const currentKey = scheduleSelector.value;
+                if (currentKey === 'current') {
+                    console.error("請在下拉選單中選擇一個「預設排班」位置來儲存當前排班表。");
+                    return;
+                }
+                
+                const slotName = scheduleSelector.options[scheduleSelector.selectedIndex].text;
+                if (confirm(`確定要將目前的【完整排班狀態】儲存到「${slotName}」嗎？這將會覆蓋舊的資料。`)) {
+                    saveState(currentKey);
+                    // 儲存後，也將當前工作區的狀態保存到 'current'，以避免用戶切換回來後數據丟失
+                    saveState('current');
+                    console.log(`🎉 恭喜！已成功將排班表儲存到「${slotName}」！`);
+                }
+            });
+
+            scheduleSelector.addEventListener('change', (e) => {
+                const newKey = e.target.value;
+                
+                // 1. 在載入新配置前，先將當前編輯中的數據保存到 'current'
+                saveState('current');
+                
+                // 2. 載入新的配置
+                loadSchedule(newKey);
+            });
             
+            // --- Modal/CRUD 邏輯 (確保操作後也儲存到 current 狀態) ---
+
             function openNewEntryModal(mode, selectElement = null) {
                 currentModalMode = mode;
                 activeSelectElement = selectElement;
@@ -838,12 +965,16 @@
                     newEntryNameInput.placeholder = '請在此輸入職位名稱';
                 }
                 newEntryModal.classList.add('visible');
+                newEntryNameInput.value = '';
                 newEntryNameInput.focus();
             }
 
             function closeNewEntryModal(resetValue = true) {
                 if (resetValue && activeSelectElement) {
-                    const scheduleData = JSON.parse(localStorage.getItem('dutyRosterSchedule') || '{}');
+                    // 嘗試從當前狀態載入舊值
+                    const savedFullState = localStorage.getItem(`dutyRosterState_current`);
+                    const scheduleData = savedFullState ? JSON.parse(savedFullState).schedule || {} : {};
+                    
                     let prevValue = '';
                     if (activeSelectElement.id) {
                          prevValue = scheduleData[activeSelectElement.id] || '';
@@ -863,7 +994,7 @@
             saveNewEntryBtn.addEventListener('click', () => {
                 const newName = newEntryNameInput.value.trim();
                 if(!newName) {
-                    alert('名稱不能為空！');
+                    console.error('名稱不能為空！');
                     return;
                 }
 
@@ -872,20 +1003,27 @@
                         personnel.push(newName);
                         renderPersonnelList();
                         updateAllDropdowns();
+                        saveState('current');
+                    } else {
+                        console.log('此姓名已存在！');
                     }
+                    
                     if (activeSelectElement) {
                         activeSelectElement.value = newName;
-                        activeSelectElement.dispatchEvent(new Event('change', { bubbles: true }));
+                        activeSelectElement.dispatchEvent(new Event('change', { bubbles: true })); 
+                        if (currentView === 'vertical') {
+                            renderVerticalView(); 
+                        }
                     }
                 } else if (currentModalMode === 'position') {
                     if (!positions.includes(newName)) {
                         positions.push(newName);
-                        saveState();
+                        saveState('current');
                         renderSchedule();
                         updateAllDropdowns();
                         renderVerticalView();
                     } else {
-                        alert('此職位已存在！');
+                        console.log('此職位已存在！');
                     }
                 }
                 closeNewEntryModal(false);
@@ -909,8 +1047,10 @@
                     renderPersonnelList();
                     updateAllDropdowns();
                     renderVerticalView();
-                    saveState();
-                } else if (personnel.includes(name)) { alert('此姓名已存在！'); }
+                    saveState('current'); 
+                } else if (personnel.includes(name)) { 
+                    console.log('此姓名已存在！');
+                }
                 newNameInput.focus();
             });
 
@@ -919,18 +1059,40 @@
             });
             
             newNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addNameBtn.click(); });
+            
+            // 刪除人員標籤
             personnelListDiv.addEventListener('click', (e) => {
                 if (e.target.classList.contains('delete-btn')) {
-                    const nameToDelete = e.target.previousElementSibling.textContent;
-                    const actualIndex = personnel.indexOf(nameToDelete);
-                    if (actualIndex > -1) {
-                         if (confirm(`確定要刪除「${personnel[actualIndex]}」嗎？`)) {
-                            personnel.splice(actualIndex, 1);
-                            renderPersonnelList();
-                            updateAllDropdowns();
-                            renderVerticalView();
-                            saveState();
-                        }
+                    const nameToDelete = e.target.dataset.name;
+                    
+                    if (confirm(`確定要刪除「${nameToDelete}」嗎？所有排班表中選擇此人處將會變成「未安排」。`)) {
+                        personnel = personnel.filter(name => name !== nameToDelete);
+                        
+                        document.querySelectorAll('#scheduleArea select').forEach(select => {
+                            if (select.value === nameToDelete) {
+                                select.value = ''; 
+                            }
+                        });
+
+                        renderPersonnelList();
+                        updateAllDropdowns();
+                        renderVerticalView();
+                        saveState('current'); 
+                    }
+                }
+            });
+
+            // 刪除職位 (表格模式)
+            scheduleBody.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-position-btn');
+                if (deleteBtn) {
+                    const positionToDelete = deleteBtn.parentElement.dataset.position;
+                     if (confirm(`確定要刪除「${positionToDelete}」這個職位嗎？所有相關排班資料將會被清除。`)) {
+                        positions = positions.filter(p => p !== positionToDelete);
+                        saveState('current'); 
+                        renderSchedule();
+                        updateAllDropdowns();
+                        renderVerticalView();
                     }
                 }
             });
@@ -941,21 +1103,7 @@
                     if (e.target.value === '__addNew__') {
                         openNewEntryModal('person', e.target);
                     } else {
-                        saveState(); 
-                        renderVerticalView();
-                    }
-                }
-            });
-
-            scheduleBody.addEventListener('click', (e) => {
-                const deleteBtn = e.target.closest('.delete-position-btn');
-                if (deleteBtn) {
-                    const positionToDelete = deleteBtn.parentElement.dataset.position;
-                     if (confirm(`確定要刪除「${positionToDelete}」這個職位嗎？所有相關排班資料將會被清除。`)) {
-                        positions = positions.filter(p => p !== positionToDelete);
-                        saveState();
-                        renderSchedule();
-                        updateAllDropdowns();
+                        saveState('current'); 
                         renderVerticalView();
                     }
                 }
@@ -973,7 +1121,7 @@
                     } else {
                         if (tableSelect) {
                             tableSelect.value = verticalSelect.value;
-                            saveState();
+                            saveState('current'); 
                         }
                     }
                 }
@@ -982,15 +1130,15 @@
             clearScheduleBtn.addEventListener('click', () => {
                 if (confirm('確定要清空所有已選擇的排班資料嗎？此操作無法復原。')) {
                     document.querySelectorAll('#scheduleBody select').forEach(select => { select.value = ''; });
-                    saveState();
+                    saveState('current'); 
                     renderVerticalView();
                 }
             });
 
             // --- 初始化 ---
-            loadState();
+            // 載入最後一次編輯的狀態 ('current')
+            loadSchedule('current');
         });
     </script>
 </body>
 </html>
-
