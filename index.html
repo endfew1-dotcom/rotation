@@ -29,6 +29,15 @@
             --color-accent-green: #2e7d32;
             --color-accent-red: #c62828;
             --color-storage: #f97316; /* 橘色 */
+
+            /* 每週顏色變數 (柔和的東方色系，避免過於鮮豔) */
+            --color-day-0: #f5f5e6; /* Mon - 柔和米黃 */
+            --color-day-1: #e6f5ff; /* Tue - 淺青藍 */
+            --color-day-2: #f0e6ff; /* Wed - 淺紫丁 */
+            --color-day-3: #fff9e6; /* Thu - 淺杏黃 */
+            --color-day-4: #e6ffee; /* Fri - 淺薄荷 */
+            --color-day-5: #ffe6f0; /* Sat - 淺粉紅 */
+            --color-day-6: #f0e6e6; /* Sun - 淺玫瑰灰 */
         }
 
         /* 動畫定義 */
@@ -69,6 +78,16 @@
         /* 表格樣式 */
         table { border-collapse: separate; border-spacing: 0; width: 100%; }
         th, td { border: 1px solid var(--color-border); padding: 0.75rem 1rem; text-align: center; white-space: nowrap; }
+        
+        /* 星期標題的顏色樣式 */
+        .day-head-0 { background-color: var(--color-day-0); }
+        .day-head-1 { background-color: var(--color-day-1); }
+        .day-head-2 { background-color: var(--color-day-2); }
+        .day-head-3 { background-color: var(--color-day-3); }
+        .day-head-4 { background-color: var(--color-day-4); }
+        .day-head-5 { background-color: var(--color-day-5); }
+        .day-head-6 { background-color: var(--color-day-6); }
+
         th {
             background-color: #f7f5f2;
             font-weight: 700;
@@ -78,11 +97,23 @@
             border-bottom: 2px solid var(--color-accent-gold);
             font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;
         }
-        tbody tr { transition: background-color 0.3s ease; }
-        tbody tr:hover { background-color: #fbfaf8; }
+        
+        /* 表格內容單元格的顏色樣式 */
+        .day-col-0 { background-color: var(--color-day-0); }
+        .day-col-1 { background-color: var(--color-day-1); }
+        .day-col-2 { background-color: var(--color-day-2); }
+        .day-col-3 { background-color: var(--color-day-3); }
+        .day-col-4 { background-color: var(--color-day-4); }
+        .day-col-5 { background-color: var(--color-day-5); }
+        .day-col-6 { background-color: var(--color-day-6); }
+
+        tbody tr:hover td { 
+            /* 懸停效果，讓顏色稍微變深 */
+            filter: brightness(0.98); 
+        }
 
         /* 輸入框 & 下拉選單 */
-        select, input[type="text"] {
+        select, input[type="text"], textarea {
             cursor: pointer; width: 100%; min-width: 130px;
             padding: 0.5rem; border-radius: 0.5rem;
             border: 1px solid var(--color-border);
@@ -93,7 +124,7 @@
             font-weight: 700;
             text-shadow: none;
         }
-        select:focus, input[type="text"]:focus {
+        select:focus, input[type="text"]:focus, textarea:focus {
             outline: none;
             border-color: var(--color-accent-gold);
             box-shadow: 0 0 0 3px rgba(161, 136, 127, 0.2);
@@ -141,20 +172,6 @@
         .loading-spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        /* Modal 樣式 */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; visibility: hidden; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .modal-overlay.visible { opacity: 1; visibility: visible; }
-        .modal-content {
-            background-color: var(--color-bg);
-            padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%;
-            border: 1px solid var(--color-border);
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
-            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .modal-overlay.visible .modal-content { transform: scale(1); }
-        
         /* 人員標籤 */
         .person-tag {
             background-color: #e8eaf6;
@@ -173,7 +190,7 @@
         
         /* 直立式檢視 */
         .vertical-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-        .day-card { background-color: #fafafa; border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 4px 12px -4px rgba(93, 64, 55, 0.1); }
+        .day-card { border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1rem; box-shadow: 0 4px 12px -4px rgba(93, 64, 55, 0.1); }
         .day-card h3 { font-size: 1.25rem; color: var(--color-header-text); border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; margin-bottom: 1rem; }
         .day-card .assignment-row { padding: 0.75rem 0; border-bottom: 1px dashed var(--color-border); }
         .day-card .assignment-row:last-child { border-bottom: none; }
@@ -312,13 +329,13 @@
                     <thead>
                         <tr>
                             <th class="w-16">職位</th>
-                            <th>星期一</th>
-                            <th>星期二</th>
-                            <th>星期三</th>
-                            <th>星期四</th>
-                            <th>星期五</th>
-                            <th>星期六</th>
-                            <th>星期日</th>
+                            <th class="day-head-0">星期一</th>
+                            <th class="day-head-1">星期二</th>
+                            <th class="day-head-2">星期三</th>
+                            <th class="day-head-3">星期四</th>
+                            <th class="day-head-4">星期五</th>
+                            <th class="day-head-5">星期六</th>
+                            <th class="day-head-6">星期日</th>
                         </tr>
                     </thead>
                     <tbody id="scheduleBody"></tbody>
@@ -479,6 +496,7 @@
             let personnel = []; // 實際運行中的人員列表
             let positions = []; // 實際運行中的職位列表
             const days = ['一', '二', '三', '四', '五', '六', '日'];
+            const dayColors = ['var(--color-day-0)', 'var(--color-day-1)', 'var(--color-day-2)', 'var(--color-day-3)', 'var(--color-day-4)', 'var(--color-day-5)', 'var(--color-day-6)']; // 7種星期顏色
             let currentView = 'table'; 
             let activeSelectElement = null;
             let currentModalMode = ''; 
@@ -486,7 +504,10 @@
             const SCHEDULE_STORAGE_KEYS = ['saved_1', 'saved_2', 'saved_3'];
 
             // --- 輔助函數 ---
-            function escapeHTML(str) { return str.replace(/[\&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[match]); }
+            function escapeHTML(str) { 
+                if (typeof str !== 'string') return '';
+                return str.replace(/[\&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[match]); 
+            }
 
             // --- 收合功能 ---
             togglePersonnelSection.addEventListener('click', () => {
@@ -529,9 +550,11 @@
                 verticalView.innerHTML = '';
                 const optionsHtml = getOptionsHtml();
 
-                days.forEach(day => {
+                days.forEach((day, index) => {
                     const dayCard = document.createElement('div');
                     dayCard.className = 'day-card';
+                    // 垂直檢視卡片套用顏色
+                    dayCard.style.backgroundColor = dayColors[index % dayColors.length];
                     
                     let cardContent = `<h3>星期${day}</h3>`;
                     
@@ -564,7 +587,8 @@
             // --- Gemini API 功能 (隨機排班) ---
             geminiSuggestBtn.addEventListener('click', () => {
                 if (personnel.length === 0) {
-                    alert("人員名單是空的，無法進行排班。");
+                    // 使用 console.error 取代 alert
+                    console.error("人員名單是空的，無法進行排班。");
                     return;
                 }
                 const originalContent = geminiSuggestBtn.innerHTML;
@@ -673,7 +697,11 @@
                     
                     const thead = document.createElement('thead');
                     let headerRowHtml = '<tr><th class="w-16">職位</th>';
-                    selectedDays.forEach(day => { headerRowHtml += `<th>星期${day}</th>`; });
+                    // 截圖時為星期標題加上顏色
+                    selectedDays.forEach((day, index) => { 
+                        const dayColor = dayColors[days.indexOf(day)];
+                        headerRowHtml += `<th style="background-color: ${dayColor};">星期${day}</th>`; 
+                    });
                     headerRowHtml += '</tr>';
                     thead.innerHTML = headerRowHtml;
                     table.appendChild(thead);
@@ -684,7 +712,11 @@
                         selectedDays.forEach(day => {
                             const select = document.getElementById(`cell-${position}-${day}`);
                             const person = select ? select.value : '未安排';
-                            bodyRowHtml += `<td><span class="person">${escapeHTML(person || '未安排')}</span></td>`;
+                            const dayIndex = days.indexOf(day);
+                            const dayColor = dayColors[dayIndex];
+                            
+                            // 截圖時為表格內容加上顏色
+                            bodyRowHtml += `<td style="background-color: ${dayColor};"><span class="person">${escapeHTML(person || '未安排')}</span></td>`;
                         });
                         bodyRowHtml += '</tr>';
                         tbody.innerHTML += bodyRowHtml;
@@ -698,6 +730,10 @@
                     selectedDays.forEach(day => {
                         const dayCard = document.createElement('div');
                         dayCard.className = 'day-card';
+                        // 垂直檢視截圖時加上顏色
+                        const dayIndex = days.indexOf(day);
+                        dayCard.style.backgroundColor = dayColors[dayIndex];
+                        
                         let cardContent = `<h3>星期${day}</h3>`;
                         positions.forEach(position => {
                              const select = document.getElementById(`cell-${position}-${day}`);
@@ -803,10 +839,13 @@
                     `;
                     row.appendChild(positionHeaderCell);
 
-                    days.forEach(day => {
+                    days.forEach((day, index) => {
                         const cell = document.createElement('td');
                         const select = document.createElement('select');
                         select.id = `cell-${escapeHTML(position)}-${day}`;
+                        // 表格內容單元格套用顏色
+                        cell.classList.add(`day-col-${index}`);
+
                         cell.appendChild(select);
                         row.appendChild(cell);
                     });
