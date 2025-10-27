@@ -29,6 +29,8 @@
             --color-accent-green: #2e7d32;
             --color-accent-red: #c62828;
             --color-storage: #f97316; /* 橘色 */
+            /* 新增 LINE 綠色 */
+            --color-line-green: #00B900; 
 
             /* 每週顏色變數 (柔和的東方色系，避免過於鮮豔) */
             --color-day-0: #f5f5e6; /* Mon - 柔和米黃 */
@@ -406,9 +408,10 @@
                  <img id="screenshotImage" src="" alt="勤務表截圖" class="w-full h-auto rounded">
             </div>
             <div class="mt-6 text-right">
-                <a id="downloadScreenshotBtn" href="#" download="勤務表.png" class="action-btn bg-[var(--color-header-text)] text-white hover:bg-opacity-90">
-                    <i data-lucide="download"></i>
-                    <span>下載圖片</span>
+                <!-- 已修改為 LINE 分享/下載按鈕 -->
+                <a id="shareDownloadBtn" href="#" download="勤務表.png" class="action-btn bg-[var(--color-line-green)] text-white hover:bg-opacity-90">
+                    <i data-lucide="send"></i>
+                    <span>LINE 分享 / 下載</span>
                 </a>
             </div>
         </div>
@@ -481,7 +484,8 @@
             const screenshotModal = document.getElementById('screenshotModal');
             const closeScreenshotModalBtn = document.getElementById('closeScreenshotModalBtn');
             const screenshotImage = document.getElementById('screenshotImage');
-            const downloadScreenshotBtn = document.getElementById('downloadScreenshotBtn');
+            // 修正為新的 ID
+            const shareDownloadBtn = document.getElementById('shareDownloadBtn');
             const viewToggleBtn = document.getElementById('viewToggleBtn');
             const printBtn = document.getElementById('printBtn');
             const tableView = document.getElementById('tableView');
@@ -824,7 +828,7 @@
                     if (!shareSucceeded) {
                         const imageUrl = URL.createObjectURL(blob);
                         screenshotImage.src = imageUrl;
-                        downloadScreenshotBtn.href = imageUrl;
+                        shareDownloadBtn.href = imageUrl; // 修正 ID
                         // 確保 modal 顯示
                         screenshotModal.classList.add('visible');
                     }
