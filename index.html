@@ -47,8 +47,6 @@
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: var(--color-bg);
-            /* 移除可能導致 CORS 錯誤的 SVG 背景圖 */
-            /* background-image: url('data:image/svg+xml,...'); */
             color: var(--color-body-text);
             animation: fadeIn 0.8s ease-out;
             min-height: 100vh;
@@ -217,6 +215,31 @@
             justify-content: center;
         }
         
+        /* Modal 樣式 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; visibility: hidden; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: var(--color-surface);
+            padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%;
+            border: 1px solid var(--color-border);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* 讓 Modal 內容可滾動，並固定 Header/Footer */
+            max-height: 90vh; /* 確保在小螢幕上可以滾動 */
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        #screenshotImageContainer {
+            min-height: 150px; 
+            max-height: 60vh; /* 限制圖片區域高度 */
+            overflow-y: auto;
+            flex-grow: 1; /* 讓圖片區域佔據可用空間 */
+        }
+        
         /* 列印樣式 */
         @media print {
             body, #captureArea {
@@ -379,7 +402,7 @@
                 </button>
             </div>
             <p class="opacity-80 mb-4">圖片已產生。您可以在圖片上按右鍵「複製影像」，或點擊下方按鈕下載後，再傳送到 LINE 或其他通訊軟體。</p>
-            <div class="mb-4 p-2 border border-dashed border-[var(--color-border)] rounded-lg bg-white/90">
+            <div id="screenshotImageContainer" class="mb-4 p-2 border border-dashed border-[var(--color-border)] rounded-lg bg-white/90">
                  <img id="screenshotImage" src="" alt="勤務表截圖" class="w-full h-auto rounded">
             </div>
             <div class="mt-6 text-right">
@@ -629,17 +652,34 @@
                 if (e.target === daySelectionModal) daySelectionModal.classList.remove('visible'); 
             });
             
+            // 修復後的 screenshotBtn 點擊事件監聽器
             screenshotBtn.addEventListener('click', () => {
-                daySelectionCheckboxes.innerHTML = '';
+                console.log('截圖分享按鈕點擊成功，準備開啟日期選擇 Modal。');
+                
+                daySelectionCheckboxes.innerHTML = ''; // 清空舊的內容
+                
                 days.forEach((day, index) => {
-                    const checked = index < 7 ? 'checked' : ''; 
-                    daySelectionCheckboxes.innerHTML += `
-                        <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-gray-100">
-                            <input type="checkbox" value="${day}" ${checked} class="h-5 w-5 rounded border-gray-300 text-[var(--color-accent-gold)] focus:ring-[var(--color-accent-gold)]">
-                            <span class="text-gray-700 font-medium">星期${day}</span>
-                        </label>
-                    `;
+                    // 預設全部勾選
+                    const isChecked = true; 
+                    
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-gray-100';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.value = day;
+                    input.checked = isChecked;
+                    input.className = 'h-5 w-5 rounded border-gray-300 text-[var(--color-accent-gold)] focus:ring-[var(--color-accent-gold)]';
+                    
+                    const span = document.createElement('span');
+                    span.className = 'text-gray-700 font-medium';
+                    span.textContent = `星期${day}`;
+                    
+                    label.appendChild(input);
+                    label.appendChild(span);
+                    daySelectionCheckboxes.appendChild(label);
                 });
+                
                 daySelectionModal.classList.add('visible');
             });
 
@@ -673,8 +713,8 @@
                 // 安全地獲取標題文字
                 const headerH1 = document.querySelector('h1');
                 const headerP = document.querySelector('header p');
-                const headerH1Text = headerH1 ? headerH1.textContent : '一週勤務表';
-                const headerPText = headerP ? headerP.textContent : '締結善緣';
+                const headerH1Text = headerH1?.textContent || '一週勤務表';
+                const headerPText = headerP?.textContent || '締結善緣';
 
                 tempCaptureContainer.innerHTML = `
                     <header class="text-center mb-8">
@@ -774,9 +814,9 @@
                             await navigator.share({ files: [file], title: '一週勤務表', text: '前賢您好這是一週勤務分配表感謝慈悲' });
                             shareSucceeded = true;
                         } catch (shareError) {
-                            // 如果 Web Share API 失敗 (例如使用者取消、權限被拒絕等)，則進入回退機制
-                            console.error("Web Share API 失敗，將回退到 Modal 預覽：", shareError);
-                            // 保持 shareSucceeded = false，讓程式碼執行回退邏輯
+                            // 修正邏輯：如果分享失敗（例如使用者取消或權限拒絕），則視為未成功分享，執行回退邏輯。
+                            console.error("Web Share API 失敗或使用者取消，將回退到 Modal 預覽：", shareError);
+                            shareSucceeded = false; // 這是關鍵修正點
                         }
                     }
                     
@@ -785,6 +825,7 @@
                         const imageUrl = URL.createObjectURL(blob);
                         screenshotImage.src = imageUrl;
                         downloadScreenshotBtn.href = imageUrl;
+                        // 確保 modal 顯示
                         screenshotModal.classList.add('visible');
                     }
 
