@@ -716,30 +716,48 @@
 
                 tempCaptureContainer.appendChild(contentArea);
 
+                let canvas;
+                let blob;
+                let shareSucceeded = false;
+
                 try {
-                    const canvas = await html2canvas(tempCaptureContainer, {
+                    // 1. 執行 html2canvas 截圖
+                    canvas = await html2canvas(tempCaptureContainer, {
                         scale: 2,
                         logging: false,
-                        // 設定 useCORS 為 false，依賴瀏覽器載入本地圖片和字體
                         useCORS: false, 
                         backgroundColor: getComputedStyle(document.body).getPropertyValue('--color-bg'),
                     });
 
-                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                     const file = new File([blob], '勤務表.png', { type: 'image/png' });
 
+                    // 2. 嘗試使用 navigator.share (Web Share API)
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: '一週勤務表', text: '前賢您好這是一週勤務分配表感謝慈悲' });
-                    } else {
+                        try {
+                            await navigator.share({ files: [file], title: '一週勤務表', text: '前賢您好這是一週勤務分配表感謝慈悲' });
+                            shareSucceeded = true;
+                        } catch (shareError) {
+                            // 如果 Web Share API 失敗 (例如使用者取消、權限被拒絕等)，則進入回退機制
+                            console.error("Web Share API 失敗，將回退到 Modal 預覽：", shareError);
+                            // 保持 shareSucceeded = false，讓程式碼執行回退邏輯
+                        }
+                    }
+                    
+                    // 3. 如果分享沒有成功 (或不支援)，則顯示 Modal 預覽
+                    if (!shareSucceeded) {
                         const imageUrl = URL.createObjectURL(blob);
                         screenshotImage.src = imageUrl;
                         downloadScreenshotBtn.href = imageUrl;
                         screenshotModal.classList.add('visible');
                     }
+
                 } catch (error) {
-                    console.error('截圖/分享失敗:', error);
-                    // 為了除錯，我們將錯誤資訊傳給用戶
-                    alert(`截圖功能發生錯誤。請檢查瀏覽器控制台的詳細錯誤訊息，或嘗試使用最新版 Chrome/Edge/Safari 瀏覽器。錯誤詳情：${error.message}`);
+                    console.error('截圖/分享流程發生錯誤:', error);
+                    // 只有在 html2canvas 階段失敗時才顯示錯誤給用戶
+                    if (error.name !== 'AbortError') {
+                        alert(`截圖功能發生錯誤。請檢查瀏覽器控制台的詳細錯誤訊息，或嘗試使用最新版 Chrome/Edge/Safari 瀏覽器。錯誤詳情：${error.message}`);
+                    }
                 } finally {
                     document.body.removeChild(tempCaptureContainer);
                     screenshotBtn.disabled = false;
